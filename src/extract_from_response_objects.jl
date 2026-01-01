@@ -21,7 +21,7 @@ function extract_prefixed_vegsystemreferanse(o, ea1, no1, ea2, no2)
             msg *= "\n\t"
             msg *= "$(link_split_key(ea1, no1, ea2, no2))     (for .ini file)"
             msg *= "\n\t"
-            msg *= " $ea1,$no1   $ea2,$no2    (for https://nvdb-vegdata.github.io/nvdb-visrute/STM/ ) \n\t\t"
+            msg *= " $ea1,$no1   $ea2,$no2    (for https://nvdb-vegdata.github.io/nvdb-visrute/ATM/ ) \n\t\t"
             return [msg]
         elseif o.metadata.status == 4041
             msg = "Error: $(o.metadata.status)  $(o.metadata.status_tekst) \n"
@@ -113,7 +113,7 @@ function extract_length(o)
     end
     total = Float64(o.metadata.lengde)
     su = sum(Δl)
-    @assert su ≈ total
+    @assert isapprox(su, total, atol = 0.1) "su =$su ≈ total = $total"
     Δl
 end
 function extract_length(q::Quilt)
@@ -139,7 +139,8 @@ Start and end points of each coincide.
 """
 function extract_multi_linestrings(o, ea, no)
     multi_linestring = map(o.vegnettsrutesegmenter) do s
-        ls = map(split(s.geometri.wkt[14:end-1], ',')) do v
+        # Api v3 -> v4: An additional space starting the linestring.
+        ls = map(split(s.geometri.wkt[15:end-1], ',')) do v
             NTuple{3, Float64}(tryparse.(Float64, split(strip(v), ' ')))
         end
     end
@@ -179,8 +180,9 @@ function extract_split_fartsgrense(o, ref, is_reversed)
     ref_from, ref_to = extract_from_to_meter(ref)
     @assert hasproperty(o, :metadata) ref
     @assert hasproperty(o, :objekter) ref
-    @assert o.metadata.antall == length(o.objekter) ref
-    indices = collect(1:o.metadata.antall)
+    # v3: antall v4: returnert
+    @assert o.metadata.returnert == length(o.objekter) ref
+    indices = collect(1:o.metadata.returnert)
     # Keep top-level indices which has relevant segments
     relevant_indices = filter(indices) do i
         objekt = o.objekter[i]

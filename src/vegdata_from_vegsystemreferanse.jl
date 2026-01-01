@@ -53,7 +53,9 @@ function fartsgrense_from_prefixed_vegsystemreferanse(ref, is_reversed)
         return (NaN, 0, 0)
     end
     @assert ref_from < ref_to ref # Callee must have failed to call correct_to_increasing_distance first.
+    # v3: inkluder = "egenskaper,vegsegmenter"
+    # v4: inkluder = ["egenskaper","vegsegmenter"]
     o = get_vegobjekter__vegobjekttypeid_(vegobjekttype_id, ref; 
-        inkluder = "egenskaper,vegsegmenter")
+        inkluder = ["egenskaper","vegsegmenter"])
     extract_split_fartsgrense(o, ref, is_reversed)
 end

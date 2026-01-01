@@ -47,9 +47,11 @@ function check_continuity_of_multi_linestring(multi_linestring)
         if i > 1 
             if distance_between(thisstart, previousend) > 0.1
                 msg = "Not matching start point $thisstart and previous end $previousend \n"
+                msg *= "Check failed for segment i = $i\n"
                 msg *= "The distance between is  $(distance_between(thisstart, previousend))\n"
                 msg *= "For checking with other tools: $(link_split_key(thisstart, thisend)) \n"
                 println()
+                @show multi_linestring
                 throw(AssertionError(msg))
             end
         end
@@ -99,11 +101,11 @@ end
 
 
 """
-    build_query_string(xs::Vararg{String,N} where N)
+    build_query_string(xs::Vararg{String,N}) where {N}
 
 Includes separators if needed, for urlstrings.
 """
-function build_query_string(xs::Vararg{String,N} where N)
+function build_query_string(xs::Vararg{String,N}) where {N}
     sf = first(xs)
     if sf == ""
         throw("The first argument can not be an empty string")

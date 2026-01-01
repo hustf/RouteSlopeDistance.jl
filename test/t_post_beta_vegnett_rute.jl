@@ -73,7 +73,7 @@ end
 
 
 #=
-  1 2             Hareid bussterminal -> Hareid ungdomsskule fv. 61          GET https://nvdbapiles-v3.test.atlas.vegvesen.no/posisjon?nord=6.947658805705906e6&ost=36975.94566374121&maks_avstand=10&trafikantgruppe=K
+  1 2             Hareid bussterminal -> Hareid ungdomsskule fv. 61          GET https://nvdbapiles.atlas.vegvesen.no/posisjon?nord=6.947658805705906e6&ost=36975.94566374121&maks_avstand=10&trafikantgruppe=K
 Error: 4041  IKKE_FUNNET_STARTPUNKT
 Out of 36976 6947659:
         Error: Fant ingen veglenkesekvenser i nærheten av søkepunkt: POINT (36975.9457 6947658.8057)
@@ -232,7 +232,7 @@ Det er for lang avstand til nærmeste veg  l = NaN
                                                                         1516 KV1123 S1D1 m289-312            l = 23.063
 
 
-18 19                   Holsekerdalen -> Ulsteinvik skysstasjon              GET https://nvdbapiles-v3.test.atlas.vegvesen.no/posisjon?nord=6.945774337512597e6&ost=27262.18078544963&maks_avstand=10&trafikantgruppe=K
+18 19                   Holsekerdalen -> Ulsteinvik skysstasjon              GET https://nvdbapiles.atlas.vegvesen.no/posisjon?nord=6.945774337512597e6&ost=27262.18078544963&maks_avstand=10&trafikantgruppe=K
 Error: 4042  IKKE_FUNNET_SLUTTPUNKT
 
         In to 27262 6945774:
@@ -240,7 +240,7 @@ Error: 4042  IKKE_FUNNET_SLUTTPUNKT
 Det er for lang avstand til nærmeste veg  l = NaN
 
 
-19 20          Ulsteinvik skysstasjon -> Saunes nord                         GET https://nvdbapiles-v3.test.atlas.vegvesen.no/posisjon?nord=6.945774337512597e6&ost=27262.18078544963&maks_avstand=10&trafikantgruppe=K
+19 20          Ulsteinvik skysstasjon -> Saunes nord                         GET https://nvdbapiles.atlas.vegvesen.no/posisjon?nord=6.945774337512597e6&ost=27262.18078544963&maks_avstand=10&trafikantgruppe=K
 Error: 4041  IKKE_FUNNET_STARTPUNKT
 Out of 27262 6945774:
         Error: Fant ingen veglenkesekvenser i nærheten av søkepunkt: POINT (27262.1808 6945774.3375)
@@ -627,7 +627,7 @@ Det er for lang avstand til nærmeste veg  l = NaN
                                                                         1515 FV654 S3D1 m10782-10836         l = 53.601
 
 
-54 55              Fosnavåg sparebank -> Fosnavåg terminal                   GET https://nvdbapiles-v3.test.atlas.vegvesen.no/posisjon?nord=6.947514879242669e6&ost=16063.782613804331&maks_avstand=10&trafikantgruppe=K
+54 55              Fosnavåg sparebank -> Fosnavåg terminal                   GET https://nvdbapiles.atlas.vegvesen.no/posisjon?nord=6.947514879242669e6&ost=16063.782613804331&maks_avstand=10&trafikantgruppe=K
 Error: 4042  IKKE_FUNNET_SLUTTPUNKT
 
         In to 16064 6947515:

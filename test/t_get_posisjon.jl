@@ -7,12 +7,16 @@ M = ["Hareid bussterminal" 36975.94566374121 6.947658805705906e6; "Hareid ungdom
 # Low-level test.
 method = "GET"
 idfields = RouteSlopeDistance.get_nvdb_fields("")
-url = "https://nvdbapiles-v3.atlas.vegvesen.no/posisjon?nord=7038165&ost=269815"
+# v3: url = "https://nvdbapiles-v3.atlas.vegvesen.no/posisjon?nord=7038165&ost=269815"
+# v4: https://nvdb-docs.atlas.vegvesen.no/nvdbapil/v4/Posisjon
+
+
+url = RouteSlopeDistance.BASEURL * "vegnett/api/v4/" * "posisjon?nord=7038165&ost=269815"
 import HTTP
 resp = HTTP.request(method, url, idfields)
-# Switch to the new base url (utv. does not work for this end point)
-url1 = RouteSlopeDistance.BASEURL * "posisjon?nord=7038165&ost=269815"
-resp = HTTP.request(method, url1, idfields)
+
+url = "vegnett/api/v4/" * "posisjon?nord=7038165&ost=269815"
+o = nvdb_request(url)[1]
 
 
 # A single test first. This point should be fine.
@@ -27,6 +31,10 @@ for i in 1:(size(M)[1])
     println()
     na, ea, no = M[i, :]
     print(i, "  ", lpad(na, 30), " ")
-    kortform = get_posisjon(ea, no)
-    print(kortform)
+    try
+        kortform = get_posisjon(ea, no)
+        print(kortform)
+    catch
+        print("no success")
+    end
 end

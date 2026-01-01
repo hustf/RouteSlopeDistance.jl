@@ -1,5 +1,5 @@
 # Definitions directly tied to accessing the nvdb api, not processing it.
-# Ref. https://nvdbapiles-v3.atlas.vegvesen.no/dokumentasjon/
+# Ref. https://nvdb-docs.atlas.vegvesen.no/nvdbapil/v4/Rute
 
 """
     get_nvdb_fields()
@@ -21,9 +21,9 @@ function get_nvdb_fields(body)
 end
 
 
-"Current stored credentials, access by spotcred()"
+"Current stored credentials"
 const NvdbSessionID  = string(uuid4()) * " $(now())" 
-const BASEURL = get_config_value("api server", "baseurl")
+const BASEURL = get_config_value("api server", "baseurl") 
 
 "Logstate(;authorization = true, request_string = true, empty_response = true)"
 Base.@kwdef mutable struct Logstate
@@ -46,3 +46,15 @@ keyword argument to `spotify_request`.
 const LOGSTATE = Logstate()
 
 const RESP_DIC = include("lookup/response_codes_dic.jl")
+
+
+
+fixed0(x::Real) = Printf.format(Printf.Format("%.0f"), x)
+fixed1(x::Real) = Printf.format(Printf.Format("%.1f"), x)
+"""
+    fixed(x::Real; decimals::Int=1)
+
+For string interpolation of utm coordinates. Api v4 may
+not accept eg. "nord=6.947659e6".
+"""
+fixed(x::Real; decimals::Int=1) = decimals == 1 ? fixed1(x) : fixed0(0)

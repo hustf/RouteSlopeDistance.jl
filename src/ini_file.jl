@@ -12,9 +12,9 @@ function _prepare_init_file_configuration(io)
         # or authorities (unless their licences says otherwise).
         #
         # The default base url is the dev environment, which may not always be available.
-        # Ref. https://nvdbapiles-v3.atlas.vegvesen.no/dokumentasjon/
+        # Ref. https://nvdb-docs.atlas.vegvesen.no/category/nvdb-api-les-v4/
         #
-        # Use https://nvdb-vegdata.github.io/nvdb-visrute/STM/ for finding
+        # Use https://nvdb-vegdata.github.io/nvdb-visrute/ATM/ for finding
         # new coorinate replacements or splits. 
         """
     println(io, msg)
@@ -22,7 +22,7 @@ function _prepare_init_file_configuration(io)
     conta = Inifile()
     # Lines in arbitrary order from file
     set(conta, "http fields", "User agent", "RouteSlopeDistance.jl 0.0.1 temp_script")
-    set(conta, "api server", "baseurl",  "https://nvdbapiles-v3.test.atlas.vegvesen.no/")
+    set(conta, "api server", "baseurl",  "https://nvdbapiles.atlas.vegvesen.no/")
     set(conta, "http fields", "Accept", "application/vnd.vegvesen.nvdb-v3-rev2+json") # temp
     #
 
@@ -33,7 +33,7 @@ function _prepare_init_file_configuration(io)
     # are performed first. After splitting, coordinates are replaced.
     # Hence, refer to the "original / uncorrected" coordinates in keys.
     # The key is from-to coordinates. The value is inserted coordinate.
-    # Use https://nvdb-vegdata.github.io/nvdb-visrute/STM/ for finding
+    # Use https://nvdb-vegdata.github.io/nvdb-visrute/ATM/ for finding
     # new coorinate replacements or splits. 
     # Function call `link_split_key(ea1, no1, ea2, no2)` can be useful.
     #

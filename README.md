@@ -1,9 +1,9 @@
 # RouteSlopeDistance.jl
 
 ## What does it do?
-This package fetches and processes data for calculating minimum travel times and energy usage for (heavy) vehicles on Norwegian roads. It could be adapted for similar countries by editing an .ini file, but this is not tested.
+This package fetches and processes data for calculating minimum travel times and energy usage for (heavy) vehicles on Norwegian roads. 
 
-The package exports `route_leg_data(A, B)`, where `A` and `B` are UTM33 coordinates. Such requests return a dictionary with rich details including 
+Processed data is available through `route_leg_data(A, B)`, where `A` and `B` are UTM33 coordinates. It is presented as a dictionary with rich details including 
 - centreline 3d coordinates
 - curvature and slope based on centreline
 - speed limit
@@ -17,11 +17,11 @@ You can fetch other data, e.g. traffic counts, road class or surface, by adaptin
 <img src="resource/plot.svg" alt = "plot" style="display: inline-block; margin: 0 auto; max-width: 640px">
 
 ## Data source
-Raw data is fetched from [Norsk Vegdatabase](https://nvdb.atlas.vegvesen.no/). Data can be used under [public license](https://data.norge.no/nlod/no/1.0).
+Raw data from [Norsk Vegdatabase](https://nvdb.atlas.vegvesen.no/). Data can be used under [public license](https://data.norge.no/nlod/no/1.0). 
 
-Expert web interface: [vegkart.no/](https://vegkart.atlas.vegvesen.no/)
+Expert web interface: [vegkart.no/](https://vegkart.atlas.vegvesen.no/#kartlag:geodata/@79705,6949088,7)
 
-Expert route patching (see below): [nvdb-vegdata.github.io/nvdb-visrute/STM/](https://nvdb-vegdata.github.io/nvdb-visrute/STM/)
+Expert route patching (see below): [nvdb-vegdata.github.io/nvdb-visrute/ATM/](https://nvdb-vegdata.github.io/nvdb-visrute/ATM/)
 
 ## Processed data
 Horizontal road curvature is found with the aid of Bsplines, and expressed as signed radius of curvature (negative values is right turn). Use this to estimate acceptable velocity from acceptable centripetal acceleration (`a = v² / r`).

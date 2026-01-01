@@ -14,6 +14,7 @@ and end coordinates, and the resulting JSON3 objects.
 function patched_post_beta_vegnett_rute(ea1::T, no1::T, ea2::T, no2::T) where T<: Int
     q = Quilt()
     build_fromtos!(q, ea1, no1, ea2, no2)
+    @show q
     correct_coordinates!(q)
     build_patches!(q)
     @assert length(q.fromtos) == length(q.patches)

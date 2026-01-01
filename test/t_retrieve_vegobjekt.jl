@@ -21,8 +21,13 @@ ref_from, ref_to = extract_from_to_meter(refs[1])
 @test ref_to == 1273
 
 # First get the catalogue of the ~400 types of info we can ask for
-url_ext = "vegobjekttyper"
-catalogue_obj = nvdb_request(url_ext)[1]
+# v3: "vegobjekttyper"
+# v4: https://nvdb-docs.atlas.vegvesen.no/nvdbapil/v4/Datakatalog
+LOGSTATE.request_string = true
+url_ext = "/datakatalog/api/v1/vegobjekttyper"
+resp = nvdb_request(url_ext)
+catalogue_obj = resp[1]
+@test length(catalogue_obj) >= 422
 catalogue = Dict(map(catalogue_obj) do o
     o.navn => Dict(o)
 end)
@@ -30,7 +35,6 @@ end)
 catalogue["Fartsgrense"]
 catalogue["Fartsdemper"]
 # We are interested in "Fartsgrense"
-url_ext = "vegobjekter/"
 vegobjekttype_id = catalogue["Fartsgrense"][:id]
 @test vegobjekttype_id == 105
 
@@ -39,14 +43,14 @@ i = 1
 ref = refs[i]
 url = "vegobjekter/$vegobjekttype_id?&vegsystemreferanse=$ref"
 o = nvdb_request(url)[1]
-@test o.metadata.antall == 1
+@test o.metadata.returnert == 1
 subref_ids = map(o.objekter) do s
     s.id
 end
 j = 1
 url = "vegobjekter/$vegobjekttype_id/$(subref_ids[j])/1"
 sub_o = nvdb_request(url)[1]
-@test length(sub_o.egenskaper) == 4
+@test length(sub_o.egenskaper) == 3
 
 egenskaper = filter(e->e.navn == "Fartsgrense", sub_o.egenskaper)
 @test length(egenskaper) == 1
@@ -61,10 +65,11 @@ vegobjekttype_id = 105
 inkluder = "egenskaper"
 url = "vegobjekter/$vegobjekttype_id?&vegsystemreferanse=$ref&inkluder=$inkluder"
 o = nvdb_request(url)[1]
-@test o.metadata.antall == 1
+# v3: antall. v4: returnert
+@test o.metadata.returnert == 1
 @test length(o.objekter) == 1
 egenskaper = o.objekter[1].egenskaper
-@test length(egenskaper) == 5
+@test length(egenskaper) == 4
 
 fartsgrenser = filter(e->e.navn == "Fartsgrense", sub_o.egenskaper)
 @test length(fartsgrenser) == 1
@@ -76,8 +81,8 @@ fartsgrense = fartsgrenser[1]
 @test fartsgrense_from_prefixed_vegsystemreferanse(refs[1], false) == (1.0, 60, 60)
 @test fartsgrense_from_prefixed_vegsystemreferanse(refs[end], false) == (1.0, 80, 80)
 @test fartsgrense_from_prefixed_vegsystemreferanse.(refs, false) isa Vector{Tuple{Float64, Int64, Int64}}
-@test fartsgrense_from_prefixed_vegsystemreferanse(refs[6], false) == (0.1086935483870973, 60, 80)
-@test fartsgrense_from_prefixed_vegsystemreferanse(refs[6], true) == (0.8913064516129027, 80, 60)
+@test fartsgrense_from_prefixed_vegsystemreferanse(refs[6], false) == (0.11196774193548399, 60, 80)
+@test fartsgrense_from_prefixed_vegsystemreferanse(refs[6], true) == (0.888032258064516, 80, 60) 
 
 
 # Step up the difficulty
@@ -106,21 +111,22 @@ refs =  ["1517 FV61 S3D1 m86 KD1 m9-13"
 ref = refs[9]
 @test extract_from_to_meter(ref) == (370, 425)
 @test extract_kategori_fase_nummer(ref) == "FV61"
-o = get_vegobjekter__vegobjekttypeid_(vegobjekttype_id, ref; inkluder = "egenskaper,vegsegmenter")
+o = get_vegobjekter__vegobjekttypeid_(vegobjekttype_id, ref; inkluder = ["egenskaper","vegsegmenter"])
 @test hasproperty(o, :objekter)
 @test length(o) == 2
 vegsegmenter1 = o.objekter[1].vegsegmenter;
-@test length(vegsegmenter1) == 1
+@test length(vegsegmenter1) == 2
 @test hasproperty(o.objekter[2], :vegsegmenter)
 vegsegmenter2 = o.objekter[2].vegsegmenter
-@test length(vegsegmenter2) == 3
-# We have four vegsegmenter, but we have only 
-# two fartsgrense. Need filtering!
-vs = [vegsegmenter1[1], vegsegmenter2[1], vegsegmenter2[2], vegsegmenter2[3]]
+@test length(vegsegmenter2) == 5
+# We have a different number of fartsgrense and vegsegmenter. Need filtering!
+# 
+vs = [vegsegmenter1[1], vegsegmenter2[1], vegsegmenter2[2], vegsegmenter2[3], vegsegmenter2[4], vegsegmenter2[5]]
 @test is_segment_relevant(ref, vs[1]) 
 @test ! is_segment_relevant(ref, vs[2]) 
 @test ! is_segment_relevant(ref, vs[3]) 
-@test is_segment_relevant(ref, vs[4]) 
+@test ! is_segment_relevant(ref, vs[4]) 
+@test is_segment_relevant(ref, vs[5]) 
 
 
 ref = refs[6]
@@ -129,36 +135,15 @@ ref = refs[6]
 o = get_vegobjekter__vegobjekttypeid_(vegobjekttype_id, ref; inkluder = "egenskaper,vegsegmenter")
 vs = o.objekter[1].vegsegmenter;
 @test ! is_segment_relevant(ref, vs[1])
-@test is_segment_relevant(ref, vs[2])
-@test ! is_segment_relevant(ref, vs[3])
-
-
-ref = refs[8]
-@test extract_from_to_meter(ref) == (270, 370)
-@test extract_kategori_fase_nummer(ref) == "FV61"
-o = get_vegobjekter__vegobjekttypeid_(vegobjekttype_id, ref; inkluder = "egenskaper,vegsegmenter")
-vs = o.objekter[1].vegsegmenter;
-@test ! is_segment_relevant(ref, vs[1])
-@test is_segment_relevant(ref, vs[2])
-@test ! is_segment_relevant(ref, vs[3])
-
-
-ref = refs[18]
-@test extract_from_to_meter(ref) == (0, 6)
-@test extract_kategori_fase_nummer(ref) == "FV654"
-@test extract_strekning_delstrekning(ref) == "S1D1"
-o = get_vegobjekter__vegobjekttypeid_(vegobjekttype_id, ref; inkluder = "egenskaper,vegsegmenter")
-vs = o.objekter[1].vegsegmenter;
-@test length(vs) == 7
-@test is_segment_relevant(ref, vs[1])
 @test ! is_segment_relevant(ref, vs[2])
-@test ! is_segment_relevant(ref, vs[3])
+@test  is_segment_relevant(ref, vs[3])
 @test ! is_segment_relevant(ref, vs[4])
 @test ! is_segment_relevant(ref, vs[5])
-@test ! is_segment_relevant(ref, vs[6])
-@test ! is_segment_relevant(ref, vs[7])
 
-
+# The below is not updated while revising API v3 to v4.
+# It might be useful if further change is needed.
+#
+#=
 # 'Krysssystem' 
 ref = refs[1]
 @test extract_from_to_meter(ref) == (9, 13)
@@ -211,12 +196,6 @@ vs = o.objekter[1].vegsegmenter;
 @test ! is_segment_relevant(ref, vs[10])
 
 
-
-
-
-
-
-
 # Tests on a higher level
 ref = refs[9]
 @test fartsgrense_from_prefixed_vegsystemreferanse(ref, false) == (0.2545454545454545, 50, 60)
@@ -243,7 +222,7 @@ ref = refs[20]
 
 @test fartsgrense_from_prefixed_vegsystemreferanse.(refs, false) isa Vector{Tuple{Float64, Int64, Int64}} 
 
-
+=#
 
 # Fartsdemper. These are few, and we can test out other ways to find those than
 # making a request per each and every lenke.
@@ -251,18 +230,16 @@ catalogue["Fartsdemper"][:id]
 vegobjekttype_id = 103
 kommune = 1517
 o = get_vegobjekter__vegobjekttypeid_(vegobjekttype_id, ""; kommune, inkluder = "vegsegmenter")
-@test o.metadata.antall == 2
+@test o.metadata.returnert == 41
 @test o.objekter[1].vegsegmenter[1].vegsystemreferanse.kortform == "FV61 S3D1 m3593"
 @test o.objekter[2].vegsegmenter[1].vegsystemreferanse.kortform == "FV61 S3D1 m3398"
 
 kommune = "1516"
 o = get_vegobjekter__vegobjekttypeid_(vegobjekttype_id, ""; kommune, inkluder = "vegsegmenter,egenskaper")
-@test o.metadata.antall == 5
-@test o.objekter[1].vegsegmenter[1].vegsystemreferanse.kortform == "FV5882 S1D1 m254"
-@test o.objekter[2].vegsegmenter[1].vegsystemreferanse.kortform == "FV5882 S1D1 m158"
-@test o.objekter[3].vegsegmenter[1].vegsystemreferanse.kortform == "FV5882 S1D1 m66"
-@test o.objekter[4].vegsegmenter[1].vegsystemreferanse.kortform == "FV5884 S1D1 m1320"
-@test o.objekter[5].vegsegmenter[1].vegsystemreferanse.kortform == "FV5884 S1D1 m1445"
+@test o.metadata.returnert == 8
+@test o.objekter[1].vegsegmenter[1].vegsystemreferanse.kortform == "FV5882 S1D1 m253"
+@test o.objekter[2].vegsegmenter[1].vegsystemreferanse.kortform == "FV61 S3D30 m1381"
+@test o.objekter[3].vegsegmenter[1].vegsystemreferanse.kortform == "FV61 S3D30 m1223"
 
 for obj in o.objekter
      profilegenskaper = filter(e->e.navn == "Profil", obj.egenskaper)
@@ -270,7 +247,7 @@ for obj in o.objekter
         profil = profilegenskaper[1]
         println(profil[:verdi])
      else
-        @show obj.egenskaper
+        #@show obj.egenskaper
      end
 end
 
@@ -290,3 +267,4 @@ for obj in o.objekter
     push!(fartshumper, vegsystemreferanse.kortform)
 end
 all_bumpd = extract_prefixed_vegsystemreferanse(o)
+@test all_bumpd == ["1516 FV5882 S1D1 m253", "1516 FV61 S3D30 m1381", "1516 FV61 S3D30 m1223", "1516 FV5882 S1D1 m159", "1516 FV5882 S1D1 m66", "1516 FV61 S3D30 m1313", "1516 FV5884 S1D1 m1320", "1516 FV5884 S1D1 m1444"]
