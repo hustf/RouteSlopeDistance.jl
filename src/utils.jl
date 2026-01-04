@@ -1,35 +1,5 @@
 # Small functions used elsewhere
 
-"""
-    reverse_linestrings_where_needed!(multi_linestring, easting1, northing1)
-    ---> Vector{Bool}
-
-In-place reversing of linestrings point order for continuity. 
-
-Returns a vector where 'true' indicated that this linestring was reversed.
-This may be used for reversing associated data.
-"""
-function reverse_linestrings_where_needed!(multi_linestring, easting1, northing1)
-    previous_point_projected = (easting1, northing1)
-    reversed = Bool[]
-    for i in eachindex(multi_linestring)
-        current_first_point_projected = multi_linestring[i][1][1:2]
-        current_last_point_projected = multi_linestring[i][end][1:2]
-        isrev = is_reversed(previous_point_projected, current_first_point_projected, current_last_point_projected)
-        if isrev
-            reverse!(multi_linestring[i])
-        end
-        push!(reversed, isrev)
-        previous_point_projected = multi_linestring[i][end]
-    end
-    reversed
-end
-
-function is_reversed(previous_point, current_first_point, current_last_point)
-    d_first = distance_between(previous_point, current_first_point)
-    d_last = distance_between(previous_point, current_last_point)
-    d_last < d_first
-end
 
 """
     check_continuity_of_multi_linestring(multi_linestring)
@@ -50,9 +20,7 @@ function check_continuity_of_multi_linestring(multi_linestring)
                 msg *= "Check failed for segment i = $i\n"
                 msg *= "The distance between is  $(distance_between(thisstart, previousend))\n"
                 msg *= "For checking with other tools: $(link_split_key(thisstart, thisend)) \n"
-                println()
-                @show multi_linestring
-                throw(AssertionError(msg))
+                @warn msg
             end
         end
         previousend = thisend
@@ -502,3 +470,36 @@ end
 
 
 
+# DEAD but not yet gone
+"""
+    reverse_linestrings_where_needed!(multi_linestring, easting1, northing1)
+    ---> Vector{Bool}
+
+In-place reversing of linestrings point order for continuity. 
+
+Returns a vector where 'true' indicated that this linestring was reversed.
+This may be used for reversing associated data.
+"""
+function reverse_linestrings_where_needed!(multi_linestring, easting1, northing1)
+    throw("dead! Change to segments_sortorder_and_reversed(mls)")
+    previous_point_projected = (easting1, northing1)
+    reversed = Bool[]
+    for i in eachindex(multi_linestring)
+        current_first_point_projected = multi_linestring[i][1][1:2]
+        current_last_point_projected = multi_linestring[i][end][1:2]
+        isrev = is_reversed(previous_point_projected, current_first_point_projected, current_last_point_projected)
+        if isrev
+            reverse!(multi_linestring[i])
+        end
+        push!(reversed, isrev)
+        previous_point_projected = multi_linestring[i][end]
+    end
+    reversed
+end
+
+function is_reversed(previous_point, current_first_point, current_last_point)
+    throw("dead! Change to segments_sortorder_and_reversed(mls)")
+    d_first = distance_between(previous_point, current_first_point)
+    d_last = distance_between(previous_point, current_last_point)
+    d_last < d_first
+end

@@ -1,16 +1,53 @@
 # Extract things we need from json3 objects we get from the API.
+
+#
+# Internal functions which don't change order of route segments.
+#
+
+function parse_multilinestring_values_and_structure(wkt::String)
+    @assert startswith(wkt, "LINESTRING Z (")
+    sco = wkt[15:end-1]
+    map(split(sco, ',')) do v
+        NTuple{3, Float64}(tryparse.(Float64, split(strip(v), ' ')))
+    end
+end
+function parse_multilinestring_values_and_structure(o::JSON3.Object)
+    @assert o.type == "Rute"
+    @assert ! isempty(o.vegnettsrutesegmenter) # Consider returning an empty thing
+    @assert hasproperty(o, :vegnettsrutesegmenter)
+    # This adds another nesting level.
+    map(o.vegnettsrutesegmenter) do oseg
+        parse_multilinestring_values_and_structure(oseg.geometri.wkt)
+    end
+end
+function parse_multilinestring_values_and_structure(q::Quilt)
+    deepnested = parse_multilinestring_values_and_structure.(q.patches)
+    # We don't want to another nesting level. That's because the Quilt type
+    # is just a way to find the correct route, we simply use it to 
+    # insert intermediate waypoints.
+    T =  Vector{Vector{Tuple{Float64, Float64, Float64}}}
+    @assert first(deepnested) isa T
+    nv = T()
+    for i in eachindex(deepnested)
+        append!(nv, deepnested[i])
+    end
+    nv
+end
+
+
 """
-    extract_prefixed_vegsystemreferanse(o, ea1, no1, ea2, no2)
+    extract_prefixed_vegsystemreferanse(o, ea1, no1, ea2, no2; tol = 1.0)
     --> Vector{String}
 
 Call this before extracting other route data,
 since this replaces references with an extended 
 error message.
 """
-function extract_prefixed_vegsystemreferanse(o, ea1, no1, ea2, no2)
+function extract_prefixed_vegsystemreferanse(o, ea1, no1, ea2, no2; tol = 1.0)
     @assert !isempty(o)
+    @assert o.type == "Rute"
     # Extract just what we want. There may be much more.
-    if iszero(o.metadata.antall)
+    if isempty(o.vegnettsrutesegmenter)
         if o.metadata.status == 4040 
             msg = "Error: $(o.metadata.status)  $(o.metadata.status_tekst) \n"
             msg *= "\t$(coordinate_key(false, ea1, no1)):\n\t\t"
@@ -38,7 +75,12 @@ function extract_prefixed_vegsystemreferanse(o, ea1, no1, ea2, no2)
             throw("unknown error code")
         end
     end
-    map(o.vegnettsrutesegmenter) do s
+    # In API v4, we don't trust the returned order at all.
+    mls = parse_multilinestring_values_and_structure(o)
+    order, _ = segments_sortorder_and_reversed(mls, ea1, no1; tol)
+    map(eachindex(o.vegnettsrutesegmenter)) do i
+        ordered_index = order[i]
+        s = o.vegnettsrutesegmenter[ordered_index]
         r = s.vegsystemreferanse
         @assert r.vegsystem.fase == "V" # Existing. If not, improve the query.
         sref = r.kortform
@@ -47,68 +89,31 @@ function extract_prefixed_vegsystemreferanse(o, ea1, no1, ea2, no2)
         "$k $scorr"
     end
 end
-function extract_prefixed_vegsystemreferanse(q::Quilt)
+function extract_prefixed_vegsystemreferanse(q::Quilt; tol = 1.0)
     refs = String[]
     for (o, fromto) in zip(q.patches, q.fromtos)
-        append!(refs, extract_prefixed_vegsystemreferanse(o, fromto...))
+        @assert hasproperty(o, :type)
+        @assert o.type =="Rute"
+        append!(refs, extract_prefixed_vegsystemreferanse(o, fromto...; tol))
     end
     refs
 end
 
 """
-    extract_prefixed_vegsystemreferanse(o)
-
-Works on objects like retrieved with
-o = get_vegobjekter__vegobjekttypeid_(vegobjekttype_id, ""; kommune = "1515,1516", inkluder = "vegsegmenter")
-"""
-function extract_prefixed_vegsystemreferanse(o)
-    map(o.objekter) do obj
-        @assert hasproperty(obj, :vegsegmenter)
-        @assert length(obj.vegsegmenter) == 1
-        vegsegment = obj.vegsegmenter[1]
-        @assert hasproperty(vegsegment, :vegsystemreferanse)
-        r = vegsegment.vegsystemreferanse
-        @assert hasproperty(r, :vegsystem)
-        @assert r.vegsystem.fase == "V" # Existing. If not, improve the query.
-        @assert hasproperty(r, :kortform)
-        sref = r.kortform
-        k = vegsegment.kommune
-        "$k $sref"
-    end
-end
-
-
-
-
-
-
-"""
-    extract_length(o)
-    extract_length(q::Quilt)
+    extract_length(o, ea1, no1; tol = 1.0)
+    extract_length(q::Quilt; tol = 1.0)
     --> Vector{Float64}
 
-Length of each segments from dabase. Sum is checked against metadata. 
-
-# Example
-```
-julia> o
-JSON3.Object{Base.CodeUnits{UInt8, String}, Vector{UInt64}} with 2 entries:
-  :vegnettsrutesegmenter => Object[{…
-  :metadata              => {…
-
-julia> println(extract_length(o))
-[13.654, 7.517, 9.066, 12.945, 154.225, 95.455, 80.824, 34.79, 74.79, 9.331, 24.277, 96.441, 24.006]
-
-julia> println(refs)
-["1517 FV61 S3D1 m3533-3547", "1517 FV61 S3D1 m3547-3555", "1517 FV61 S3D1 m3555-3564", "1517 FV61 S3D1 m3564-3577", "1517 FV61 S3D1 m3577-3731", "1517 FV61 S3D1 m3731-3826", "1517 FV61 S3D1 m3826-3907", "1517 FV61 S3D1 m3907-3942", "1517 FV61 S3D1 m3942-4017", "1517 FV61 S3D1 m4017-4026", "1517 FV61 S3D1 m4026-4050", "1517 FV61 S3D1 m4050-4147", "1517 FV61 S3D1 m4147-4171"]
-```
+Length of each segment, ordered from position (ea1, no1). Sum is checked against metadata. 
 """
-function extract_length(o)
+function extract_length(o, ea1, no1; tol = 1.0)
+    @assert o.type == "Rute"
     @assert hasproperty(o, :vegnettsrutesegmenter)
-    if o.metadata.antall == 0
+    if isempty(o.vegnettsrutesegmenter)
         return [NaN]
     end
-    Δl = map(o.vegnettsrutesegmenter) do s
+    order, _ = segments_sortorder_and_reversed(o, ea1, no1; tol)
+    Δl = map(o.vegnettsrutesegmenter[order]) do s
         s.lengde
     end
     total = Float64(o.metadata.lengde)
@@ -116,52 +121,62 @@ function extract_length(o)
     @assert isapprox(su, total, atol = 0.1) "su =$su ≈ total = $total"
     Δl
 end
-function extract_length(q::Quilt)
+function extract_length(q::Quilt; tol = 1.0)
     Δl = Float64[]
-    for o in q.patches
-        append!(Δl, extract_length(o))
+    for (o, fromto) in zip(q.patches, q.fromtos)
+        @assert hasproperty(o, :type)
+        @assert o.type == "Rute"
+        ea1, no1 = fromto[1:2]
+        append!(Δl, extract_length(o, ea1, no1; tol))
     end
     Δl
 end
 
+
 """
-    extract_multi_linestrings(o, ea, no)
-    --> Vector{Vector{Tuple{Float64, Float64, Float64}}}, Vector{Bool}
+    extract_multi_linestrings(q::Quilt; tol = 1.0)
+    extract_multi_linestrings(o::JSON3.Object, ea, no; tol = 1.0)
+    --> Vector{Vector{Tuple{Float64, Float64, Float64}}}
 
-The starting point coordinates are given as input, so that
-we can reverse the linestrings returned from API where needed.
+Output is ordered properly, unlike the potentially unordered and reversed
+output from the API.
 
-The second returned vector indicates if a segment was reversed or not.
-Reversion might be applicable to related data.
+The starting point coordinates are given as (ea1, no), so that
+we can reorder what the API returns. 'q' come with direction
+specified.
 
-Each vector contains a linestring.
-Start and end points of each coincide.
+Each resulting nested vector's start and end points coincide
+with its neighbors.
 """
-function extract_multi_linestrings(o, ea, no)
-    multi_linestring = map(o.vegnettsrutesegmenter) do s
-        # Api v3 -> v4: An additional space starting the linestring.
-        ls = map(split(s.geometri.wkt[15:end-1], ',')) do v
-            NTuple{3, Float64}(tryparse.(Float64, split(strip(v), ' ')))
-        end
+function extract_multi_linestrings(o::JSON3.Object, ea, no; tol = 1.0)
+    @assert o.type == "Rute"
+    mls = parse_multilinestring_values_and_structure(o)
+    @assert ! isempty(mls)
+    # Find the permutations necessary for making a continuous
+    # path starting at (ea, no)
+    order, reversed = segments_sortorder_and_reversed(mls, ea, no; tol)
+    # Flip the order of segments and points if necessary for continuity. 
+    mls = map(zip(mls[order], reversed)) do (v, rev)
+        rev ? reverse(v) : v
     end
-    @assert ! isempty(multi_linestring)
-    # Flip the order of points if necessary for continuity. 
-    reversed = reverse_linestrings_where_needed!(multi_linestring, ea, no)
-    @assert ! isempty(multi_linestring)
-    check_continuity_of_multi_linestring(multi_linestring)
-    @assert ! isempty(multi_linestring)
-    multi_linestring, reversed
+    check_continuity_of_multi_linestring(mls)
+    mls
 end
-function extract_multi_linestrings(q::Quilt)
-    mls = Vector{Vector{Tuple{Float64, Float64, Float64}}}()
-    reversed = Vector{Bool}()
+function extract_multi_linestrings(q::Quilt; tol = 1.0)
+    # We don't want to another nesting level. That's because the Quilt type
+    # is just a way to find the correct route, we simply use it to 
+    # insert intermediate waypoints.
+    T =  Vector{Vector{Tuple{Float64, Float64, Float64}}}
+    nv = T()
     for (o, fromto) in zip(q.patches, q.fromtos)
+        @assert hasproperty(o, :vegnettsrutesegmenter)
+        @assert hasproperty(o, :type)
+        @assert o.type == "Rute"
         ea1, no1, _, __ = fromto
-        patchml, rev = extract_multi_linestrings(o, ea1, no1)
-        append!(mls, patchml)
-        append!(reversed, rev)
+        patchml = extract_multi_linestrings(o, ea1, no1; tol)
+        append!(nv, patchml)
     end
-    mls, reversed
+    nv
 end
 
 """
@@ -177,6 +192,7 @@ ref is prefixed vegsystemreferanse for the request.
 `is_reversed` is true if the output is to be applied to a reversed linestring. See calling context.
 """
 function extract_split_fartsgrense(o, ref, is_reversed)
+    @warn "Implement new order, reversed..."
     ref_from, ref_to = extract_from_to_meter(ref)
     @assert hasproperty(o, :metadata) ref
     @assert hasproperty(o, :objekter) ref
@@ -315,3 +331,27 @@ function _extract_split_fartsgrense(fra_m_s, til_m_s, fartsgrenser_s, ref_to, re
 end
 
 
+# DEAD but not gone
+"""
+    extract_prefixed_vegsystemreferanse(o)
+
+Works on objects like retrieved with
+o = get_vegobjekter__vegobjekttypeid_(vegobjekttype_id, ""; kommune = "1515,1516", inkluder = "vegsegmenter")
+"""
+function extract_prefixed_vegsystemreferanse(o; tol = 1.0)
+    @warn "Temporary, may be called dead."
+    throw("yea!")
+    map(o.objekter) do obj
+        @assert hasproperty(obj, :vegsegmenter)
+        @assert length(obj.vegsegmenter) == 1
+        vegsegment = obj.vegsegmenter[1]
+        @assert hasproperty(vegsegment, :vegsystemreferanse)
+        r = vegsegment.vegsystemreferanse
+        @assert hasproperty(r, :vegsystem)
+        @assert r.vegsystem.fase == "V" # Existing. If not, improve the query.
+        @assert hasproperty(r, :kortform)
+        sref = r.kortform
+        k = vegsegment.kommune
+        "$k $sref"
+    end
+end

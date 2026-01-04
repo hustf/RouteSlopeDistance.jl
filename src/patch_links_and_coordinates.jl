@@ -14,7 +14,6 @@ and end coordinates, and the resulting JSON3 objects.
 function patched_post_beta_vegnett_rute(ea1::T, no1::T, ea2::T, no2::T) where T<: Int
     q = Quilt()
     build_fromtos!(q, ea1, no1, ea2, no2)
-    @show q
     correct_coordinates!(q)
     build_patches!(q)
     @assert length(q.fromtos) == length(q.patches)
@@ -60,14 +59,28 @@ function amend_fromtos!(q, i)
     q
 end
 
-function build_patches!(q::Quilt)
+"""
+    build_patches!(q::Quilt; upper_lim_omkrets = 0.0)
+
+- `upper_lim_omkrets`: Use this to overrule `omkrets`, e.g. when 
+   the best route is longer that the distance between start and end.
+
+Even better might be to specify this on a patch by patch level, possible
+future revision.
+"""
+function build_patches!(q::Quilt; upper_lim_omkrets = 0.0)
     for (ea1, no1, ea2, no2) in q.fromtos
         o = post_beta_vegnett_rute(ea1, no1, ea2, no2)
         @assert !isempty(o)
         # Before failing, we'll increase 'omkrets' in steps.
+        # TODO: Drop 'antall', specify that in the request
         if iszero(o.metadata.antall)
             min_omkrets = 150 # Double default value
-            max_omkrets = 2000 # Perhaps slow or unpredictable
+            if upper_lim_omkrets == 0.0
+                max_omkrets = norm((ea2,no2) .- (ea1, no1))
+            else
+                max_omkrets = 2000 # Perhaps slow or unpredictable
+            end
             for x in range(min_omkrets, max_omkrets, length = 18)
                 omkrets = Int64(round(x))
                 printstyled("Retrying route request $(link_split_key(ea1, no1, ea2, no2)) with larger 'omkrets' = $omkrets \n", color =:176)
@@ -76,6 +89,7 @@ function build_patches!(q::Quilt)
                 ! iszero(o.metadata.antall) && break
             end
         end
+        # TODO: Drop 'antall', specify that in the request
         if iszero(o.metadata.antall)
             msg = extract_prefixed_vegsystemreferanse(o, ea1, no1, ea2, no2)[1]
             @assert ! iszero(o.metadata.antall) "$msg"

@@ -93,6 +93,7 @@ function post_beta_vegnett_rute(easting1, northing1, easting2, northing2; omkret
         :behold_trafikantgruppe => true
         :slutt                  => "$(fixed(easting2)) , $(fixed(northing2))"
         :tidspunkt              => "2023-07-28"
+        :inkluderAntall         => false
         ])
     push!(body, :omkrets => omkrets)
     # Make the call, get a json object
@@ -112,7 +113,7 @@ Drops 'arm'
 
 """
 function get_vegobjekter__vegobjekttypeid_(vegobjekttype_id, vegsystemreferanse::String; 
-    inkluder = "", alle_versjoner = false, segmentering = false, kommune = "")
+    inkluder = "", alle_versjoner = false, segmentering = false, kommune = "", inkluderAntall = false)
     u = "vegobjekter/$vegobjekttype_id"
     a = urlstring(;  vegsystemreferanse = vegsystemreferanse, inkluder, alle_versjoner, segmentering, kommune)
     url = build_query_string(u, a)
