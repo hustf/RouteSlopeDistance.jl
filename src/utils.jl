@@ -103,12 +103,24 @@ julia> extract_from_to_meter("1517 FV61 S3D1 m86-143")
 
 julia> extract_from_to_meter("FV61 S3D1 m86-143")
 (86, 143)
+
+julia> extract_from_to_meter("1515 FV654 S1D1 m3067")
+(3067, 3067)
 ```
 """
 function extract_from_to_meter(ref::String)
     from_to = split(ref, ' ')[end]
     @assert startswith(from_to, 'm') ref
-    Tuple(tryparse.(Int, split(from_to[2:end], '-')))
+    tup = Tuple(tryparse.(Int, split(from_to[2:end], '-')))
+    if length(tup) == 1
+        # Rarely happens
+        # One example is for ref = "1515 FV654 S1D1 m3067"
+        return (tup[1], tup[1])
+    elseif length(tup) == 2
+        return tup
+    else
+        throw(ArgumentError("ref = $ref"))
+    end
 end
 
 """
@@ -342,7 +354,7 @@ function is_rpoint_in_ref(rpoint::String, ref::String)
         if extract_strekning_delstrekning(ref) ==  extract_strekning_delstrekning(rpoint)
             enveloping = extract_from_to_meter(ref)
             point = extract_from_to_meter(rpoint)
-            @assert length(point) == 1
+            @assert point[1] == point[2] "point = $point, rpoint = $rpoint,  ref = $ref, enveloping =  $enveloping"
             if enveloping[1] <= point[1]
                 if enveloping[2] >= point[1]
                     return true
@@ -470,36 +482,3 @@ end
 
 
 
-# DEAD but not yet gone
-"""
-    reverse_linestrings_where_needed!(multi_linestring, easting1, northing1)
-    ---> Vector{Bool}
-
-In-place reversing of linestrings point order for continuity. 
-
-Returns a vector where 'true' indicated that this linestring was reversed.
-This may be used for reversing associated data.
-"""
-function reverse_linestrings_where_needed!(multi_linestring, easting1, northing1)
-    throw("dead! Change to segments_sortorder_and_reversed(mls)")
-    previous_point_projected = (easting1, northing1)
-    reversed = Bool[]
-    for i in eachindex(multi_linestring)
-        current_first_point_projected = multi_linestring[i][1][1:2]
-        current_last_point_projected = multi_linestring[i][end][1:2]
-        isrev = is_reversed(previous_point_projected, current_first_point_projected, current_last_point_projected)
-        if isrev
-            reverse!(multi_linestring[i])
-        end
-        push!(reversed, isrev)
-        previous_point_projected = multi_linestring[i][end]
-    end
-    reversed
-end
-
-function is_reversed(previous_point, current_first_point, current_last_point)
-    throw("dead! Change to segments_sortorder_and_reversed(mls)")
-    d_first = distance_between(previous_point, current_first_point)
-    d_last = distance_between(previous_point, current_last_point)
-    d_last < d_first
-end

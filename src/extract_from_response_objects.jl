@@ -36,12 +36,26 @@ end
 
 
 """
+    extract_prefixed_vegsystemreferanse(q::Quilt; tol = 1.0)
     extract_prefixed_vegsystemreferanse(o, ea1, no1, ea2, no2; tol = 1.0)
-    --> Vector{String}
+    --> Vector{String}, Vector{Bool}
+    --> refs, reversed
 
-Call this before extracting other route data,
-since this replaces references with an extended 
-error message.
+This function provides more feedback on errors, for ease of making [link split]
+and [coordinates replacement] entries in the .ini file.
+
+Output is ordered from `(ea1, no1)`. For an explanation, see `extract_multi_linestrings`.
+
+# Arguments
+
+- `q` contains the other arguments. 
+
+
+# Example output
+
+["1516 KV1123 S1D1 m504-531",  "1516 KV1123 S1D1 m478-504"], [true, true]
+
+
 """
 function extract_prefixed_vegsystemreferanse(o, ea1, no1, ea2, no2; tol = 1.0)
     @assert !isempty(o)
@@ -77,8 +91,12 @@ function extract_prefixed_vegsystemreferanse(o, ea1, no1, ea2, no2; tol = 1.0)
     end
     # In API v4, we don't trust the returned order at all.
     mls = parse_multilinestring_values_and_structure(o)
-    order, _ = segments_sortorder_and_reversed(mls, ea1, no1; tol)
-    map(eachindex(o.vegnettsrutesegmenter)) do i
+    # Consider TODO: Detect if the API returns mls consistent with
+    # direction of naming...
+    # order: Necessary permutations to unordered 'mls'.
+    # rev: Necessary flipping of unordered mls segments.
+    order, reversed_unordered_indexing = segments_sortorder_and_reversed(mls, ea1, no1; tol)
+    vref = map(eachindex(o.vegnettsrutesegmenter)) do i
         ordered_index = order[i]
         s = o.vegnettsrutesegmenter[ordered_index]
         r = s.vegsystemreferanse
@@ -88,15 +106,24 @@ function extract_prefixed_vegsystemreferanse(o, ea1, no1, ea2, no2; tol = 1.0)
         k = s.kommune
         "$k $scorr"
     end
+    # Which segments (in the wanted order) were flipped.
+    # The info is needed to identify locations that are given
+    # in the original internal coordinates of a segment, like
+    # speed bumps and signs. 
+    reversed = reversed_unordered_indexing[order]
+    vref, reversed
 end
 function extract_prefixed_vegsystemreferanse(q::Quilt; tol = 1.0)
     refs = String[]
+    reversed = Bool[]
     for (o, fromto) in zip(q.patches, q.fromtos)
         @assert hasproperty(o, :type)
         @assert o.type =="Rute"
-        append!(refs, extract_prefixed_vegsystemreferanse(o, fromto...; tol))
+        vref, vrev = extract_prefixed_vegsystemreferanse(o, fromto...; tol)
+        append!(refs, vref)
+        append!(reversed, vrev)
     end
-    refs
+    refs, reversed
 end
 
 """
@@ -113,13 +140,13 @@ function extract_length(o, ea1, no1; tol = 1.0)
         return [NaN]
     end
     order, _ = segments_sortorder_and_reversed(o, ea1, no1; tol)
-    Δl = map(o.vegnettsrutesegmenter[order]) do s
+    Δl = map(o.vegnettsrutesegmenter) do s
         s.lengde
     end
     total = Float64(o.metadata.lengde)
     su = sum(Δl)
     @assert isapprox(su, total, atol = 0.1) "su =$su ≈ total = $total"
-    Δl
+    Δl[order]
 end
 function extract_length(q::Quilt; tol = 1.0)
     Δl = Float64[]
@@ -136,47 +163,53 @@ end
 """
     extract_multi_linestrings(q::Quilt; tol = 1.0)
     extract_multi_linestrings(o::JSON3.Object, ea, no; tol = 1.0)
-    --> Vector{Vector{Tuple{Float64, Float64, Float64}}}
+    --> Vector{Vector{Tuple{Float64, Float64, Float64}}}, Vector{Bool}
+    --> `(nv, reversed)`
 
-Output is ordered properly, unlike the potentially unordered and reversed
-output from the API.
+"Wanted order" is defined by utm point '(ea, no)'. That point  has a distance to both physical 
+ends of the unordered multi-linestring from API v4. The closer end indicates which should be first 
+after reordering.
 
-The starting point coordinates are given as (ea1, no), so that
-we can reorder what the API returns. 'q' come with direction
-specified.
+Output `nv` is ordered on both nesting levels, segments and points.
 
-Each resulting nested vector's start and end points coincide
-with its neighbors.
+- 'reversed' indicates which segments (in the new segment order) were flipped for the wanted point order. 
+
+Each resulting nested vector's start and end points coincide with its neighbors.
 """
 function extract_multi_linestrings(o::JSON3.Object, ea, no; tol = 1.0)
     @assert o.type == "Rute"
-    mls = parse_multilinestring_values_and_structure(o)
-    @assert ! isempty(mls)
-    # Find the permutations necessary for making a continuous
+    mls_unordered = parse_multilinestring_values_and_structure(o)
+    @assert ! isempty(mls_unordered)
+    # Find the permutations necessary for the wanted order
     # path starting at (ea, no)
-    order, reversed = segments_sortorder_and_reversed(mls, ea, no; tol)
+    order, reversed_unordered_indexing = segments_sortorder_and_reversed(mls_unordered, ea, no; tol)
     # Flip the order of segments and points if necessary for continuity. 
-    mls = map(zip(mls[order], reversed)) do (v, rev)
+    nv = map(zip(mls_unordered[order], reversed_unordered_indexing)) do (v, rev)
         rev ? reverse(v) : v
     end
-    check_continuity_of_multi_linestring(mls)
-    mls
+    check_continuity_of_multi_linestring(nv)
+    # Which segments (in the wanted order) were flipped.
+    reversed = reversed_unordered_indexing[order]
+    nv, reversed
 end
 function extract_multi_linestrings(q::Quilt; tol = 1.0)
-    # We don't want to another nesting level. That's because the Quilt type
-    # is just a way to find the correct route, we simply use it to 
-    # insert intermediate waypoints.
+    # The Quilt type is a way to find the correct route, 
+    # by splitting a requested route.
+    # We don't want to add another nesting level to the output,
+    # we append results from such splits insted. 
     T =  Vector{Vector{Tuple{Float64, Float64, Float64}}}
     nv = T()
+    reversed = Bool[]
     for (o, fromto) in zip(q.patches, q.fromtos)
         @assert hasproperty(o, :vegnettsrutesegmenter)
         @assert hasproperty(o, :type)
         @assert o.type == "Rute"
         ea1, no1, _, __ = fromto
-        patchml = extract_multi_linestrings(o, ea1, no1; tol)
+        patchml, vrev = extract_multi_linestrings(o, ea1, no1; tol)
         append!(nv, patchml)
+        append!(reversed, vrev)
     end
-    nv
+    nv, reversed
 end
 
 """
@@ -192,7 +225,6 @@ ref is prefixed vegsystemreferanse for the request.
 `is_reversed` is true if the output is to be applied to a reversed linestring. See calling context.
 """
 function extract_split_fartsgrense(o, ref, is_reversed)
-    @warn "Implement new order, reversed..."
     ref_from, ref_to = extract_from_to_meter(ref)
     @assert hasproperty(o, :metadata) ref
     @assert hasproperty(o, :objekter) ref
@@ -331,7 +363,7 @@ function _extract_split_fartsgrense(fra_m_s, til_m_s, fartsgrenser_s, ref_to, re
 end
 
 
-# DEAD but not gone
+
 """
     extract_prefixed_vegsystemreferanse(o)
 
@@ -339,8 +371,6 @@ Works on objects like retrieved with
 o = get_vegobjekter__vegobjekttypeid_(vegobjekttype_id, ""; kommune = "1515,1516", inkluder = "vegsegmenter")
 """
 function extract_prefixed_vegsystemreferanse(o; tol = 1.0)
-    @warn "Temporary, may be called dead."
-    throw("yea!")
     map(o.objekter) do obj
         @assert hasproperty(obj, :vegsegmenter)
         @assert length(obj.vegsegmenter) == 1

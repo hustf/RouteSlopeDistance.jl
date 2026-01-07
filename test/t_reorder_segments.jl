@@ -63,6 +63,24 @@ minimum([o.lengde for o in q.patches[2].vegnettsrutesegmenter])
 pl = plot_inspect_continuity(mls; order, reversed);
 title!(pl[2], tit)
 
+# This was problematic for route_leg_data.
+# Very short (0.49m) segment
+start = 31
+stop = 30
+na1, ea1, no1 = M[start, :]
+na2, ea2, no2 = M[stop, :]
+tit = rpad("$start", 3) * na1 * " til " * na2
+q = patched_post_beta_vegnett_rute(ea1, no1, ea2, no2);
+@test length(q.patches) == 1
+mls  = parse_multilinestring_values_and_structure(q)
+order, reversed = segments_sortorder_and_reversed(mls, ea1, no1)
+minimum([o.lengde for o in q.patches[1].vegnettsrutesegmenter])
+@test order == [4, 11, 3, 7, 8, 6, 9, 5, 2, 1, 12, 10]
+@test reversed ==  Bool[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+pl = plot_inspect_continuity(mls; order, reversed);
+title!(pl[2], tit)
+
+
 
 for start in 1:(size(M,1) - 1)
     na1, ea1, no1 = M[start, :]

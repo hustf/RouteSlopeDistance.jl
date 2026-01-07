@@ -14,14 +14,15 @@ stop = 6
 na1, ea1, no1 = M[start, :]
 na2, ea2, no2 = M[stop, :]
 o = post_beta_vegnett_rute(ea1, no1, ea2, no2)
-refs = extract_prefixed_vegsystemreferanse(o, ea1, no1, ea2, no2)
+refs, revs = extract_prefixed_vegsystemreferanse(o, ea1, no1, ea2, no2)
 @test refs[1] == "1517 FV61 S3D1 m2231-2236"
 Δls = extract_length(o, ea1, no1)
 @test length(Δls) == 8
-mls = extract_multi_linestrings(o, ea1, no1)
+mls, rev = extract_multi_linestrings(o, ea1, no1)
 @test length(mls) == 8
 @test mls isa Vector{Vector{Tuple{Float64, Float64, Float64}}}
-
+@test length(rev) == 8
+@test all(rev .== false)
 
 # Test status 4041. This also triggers Http error 404. We don't suppress that mistake.
 start = 1
@@ -51,7 +52,7 @@ stop = 40
 na1, ea1, no1 = M[start, :]
 na2, ea2, no2 = M[stop, :]
 o = post_beta_vegnett_rute(ea1, no1, ea2, no2)
-refs = extract_prefixed_vegsystemreferanse(o, ea1, no1, ea2, no2)
+refs, revs = extract_prefixed_vegsystemreferanse(o, ea1, no1, ea2, no2)
 @test length(refs) == 1
 @test startswith(refs[1], "Error: 4040")
 
@@ -66,7 +67,7 @@ for (start, stop) in zip(rws[1: (end - 1)], rws[2:end])
     na2, ea2, no2 = M[stop, :]
     print(lpad("$start $stop", 5), "  ", lpad(na1, 30), " -> ", rpad(na2, 30), " ")
     o = post_beta_vegnett_rute(ea1, no1, ea2, no2)
-    refs = extract_prefixed_vegsystemreferanse(o, ea1, no1, ea2, no2)
+    refs, revs = extract_prefixed_vegsystemreferanse(o, ea1, no1, ea2, no2)
     lengths = extract_length(o)
     for (r, l) in zip(refs, lengths)
          print(rpad(r, 35) , "  l = ",  l)

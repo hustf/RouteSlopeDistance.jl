@@ -68,7 +68,7 @@ q = patched_post_beta_vegnett_rute(ea1, no1, ea2, no2);
 #      POST https://nvdbapiles.atlas.vegvesen.no/vegnett/api/v4/beta/vegnett/rute   \{"typeveg":["Kanalisert veg","Enkel bilveg","Rampe","Rundkjøring","Gang- og sykkelveg"],"konnekteringslenker":true,"maks_avstand":10,"behold_trafikantgruppe":true,"slutt":"34418.0 , 6947105.0","tidspunkt":"2023-07-28","start":"34866.0 , 6947308.0","omkrets":100,"trafikantgruppe":"K","detaljerte_lenker":true}
 @test length(q.fromtos) == 1
 @test length(q.patches) == 1
-refs = extract_prefixed_vegsystemreferanse(q)
+refs, revs = extract_prefixed_vegsystemreferanse(q)
 @test refs == ["1517 FV61 S3D1 m2231-2236", "1517 FV61 S3D1 m2236-2315", "1517 FV61 S3D1 m2315-2423", "1517 FV61 S3D1 m2423-2524", "1517 FV61 S3D1 m2524-2602", "1517 FV61 S3D1 m2602-2617", "1517 FV61 S3D1 m2617-2665", "1517 FV61 S3D1 m2665-2723"]
 Δls = extract_length(q)
 @test length(Δls) == 8
@@ -85,7 +85,7 @@ From manual editing, compare both methods for length estimation of segments.
  -2617 + 2665 -   47.67
  -2665 + 2723 -   57.9063
 =#
-mls = extract_multi_linestrings(q)
+mls, rev = extract_multi_linestrings(q)
 @test length(mls) == 8
 @test mls isa Vector{Vector{Tuple{Float64, Float64, Float64}}}
 # Looks god
@@ -113,7 +113,7 @@ q = patched_post_beta_vegnett_rute(ea1, no1, ea2, no2)
 @test length(q.patches) == 1
 @test length(q.fromtos) == 1
 @test q.fromtos[1] == [ea1, no1, ea2, no2]
-mls = extract_multi_linestrings(q)
+mls, rev = extract_multi_linestrings(q)
 @test length(mls) == 4
 tit =  na1 * " til " * na2
 pl = plot_inspect_continuity(mls);
@@ -131,12 +131,12 @@ key = link_split_key(ea1, no1, ea2, no2)
 insertpos = get_config_value("link split", key, Tuple{Float64, Float64}, nothing_if_not_found = true)
 q = patched_post_beta_vegnett_rute(ea1, no1, ea2, no2)
 @test length(q.fromtos) == 2
-refs = extract_prefixed_vegsystemreferanse(q)
+refs, revs = extract_prefixed_vegsystemreferanse(q)
 @test refs[1] == "1516 KV1123 S1D1 m172-288"
 Δls = extract_length(q)
 @test sum(Δls) > 560 && sum(Δls) < 570
 @test length(Δls) == 20
-mls = extract_multi_linestrings(q)
+mls, rev = extract_multi_linestrings(q)
 @test length(mls) == 20
 @test mls isa Vector{Vector{Tuple{Float64, Float64, Float64}}}
 pl = plot_inspect_continuity(mls);
@@ -150,9 +150,29 @@ na1, ea1, no1 = M[start, :]
 na2, ea2, no2 = M[stop, :]
 tit = rpad("$start", 3) * na1 * " til " * na2
 q = patched_post_beta_vegnett_rute(ea1, no1, ea2, no2);
-mls = extract_multi_linestrings(q)
+mls, rev = extract_multi_linestrings(q)
 pl = plot_inspect_continuity(mls);
 title!(pl[2], tit)
 
 
-
+# This was problematic for route_leg_data
+start = 31
+stop = 30
+na1, ea1, no1 = M[start, :]
+na2, ea2, no2 = M[stop, :]
+tit = rpad("$start", 3) * na1 * " til " * na2
+key = link_split_key(ea1, no1, ea2, no2)
+insertpos = get_config_value("link split", key, Tuple{Float64, Float64}, nothing_if_not_found = true)
+q = patched_post_beta_vegnett_rute(ea1, no1, ea2, no2)
+@test length(q.fromtos) == 1
+refs, revs = extract_prefixed_vegsystemreferanse(q)
+@test refs[1] == "1515 FV654 S1D1 m3067"
+Δls = extract_length(q)
+@test sum(Δls) > 638 && sum(Δls) < 640
+@test length(Δls) == 12
+mls, rev = extract_multi_linestrings(q)
+@test rev == revs
+@test length(mls) == 12
+@test mls isa Vector{Vector{Tuple{Float64, Float64, Float64}}}
+pl = plot_inspect_continuity(mls);
+title!(pl[2], tit)

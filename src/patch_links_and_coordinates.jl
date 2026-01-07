@@ -60,39 +60,50 @@ function amend_fromtos!(q, i)
 end
 
 """
-    build_patches!(q::Quilt; upper_lim_omkrets = 0.0)
+    build_patches!(q::Quilt; omkrets_forced = nothing)
 
-- `upper_lim_omkrets`: Use this to overrule `omkrets`, e.g. when 
-   the best route is longer that the distance between start and end.
+- `omkrets_forced`: If default `nothing`, parameter 'omkrets' will be iteratively \n 
+   increased up to `norm((ea2,no2) .- (ea1, no1))`. `omkrets` is related to 
+   the bounding box size of the search, start and end points. 
+   If a value is given, this will be used in the first search, since a too small
+   value sometimes results in slow shortcuts on tiny roads.
 
-Even better might be to specify this on a patch by patch level, possible
-future revision.
+Instead of fiddling with `omkrets`, prefer to define `[link split]` entries 
+in `RouteSlopeDistance.ini`.
 """
-function build_patches!(q::Quilt; upper_lim_omkrets = 0.0)
+function build_patches!(q::Quilt; omkrets_forced = nothing)
     for (ea1, no1, ea2, no2) in q.fromtos
-        o = post_beta_vegnett_rute(ea1, no1, ea2, no2)
-        @assert !isempty(o)
-        # Before failing, we'll increase 'omkrets' in steps.
-        # TODO: Drop 'antall', specify that in the request
-        if iszero(o.metadata.antall)
-            min_omkrets = 150 # Double default value
-            if upper_lim_omkrets == 0.0
+        if ! isnothing(omkrets_forced)
+            o = post_beta_vegnett_rute(ea1, no1, ea2, no2; omkrets = omkrets_forced)
+            @assert !isempty(o)
+            @assert o.type == "Rute"
+            @assert ! isempty(o.vegnettsrutesegmenter)
+        else
+            o = post_beta_vegnett_rute(ea1, no1, ea2, no2)
+            @assert !isempty(o)
+            @assert o.type == "Rute"
+            # Before failing, we'll change 'omkrets' in steps.
+            if isempty(o.vegnettsrutesegmenter)
+                min_omkrets = 150 # Double default value
+                # NOTE that 'max_omkrets' may actually be smaller than 'min_omkrets'!
+                # This would occur for short [link split] entries, as when defining
+                # a certain approach to an end point. It's not intuitive why 
+                # a larger omkrets may lead to a failed request, though. One 
+                # possibility is a server error which isn't caught properly by this
+                # program.
                 max_omkrets = norm((ea2,no2) .- (ea1, no1))
-            else
-                max_omkrets = 2000 # Perhaps slow or unpredictable
-            end
-            for x in range(min_omkrets, max_omkrets, length = 18)
-                omkrets = Int64(round(x))
-                printstyled("Retrying route request $(link_split_key(ea1, no1, ea2, no2)) with larger 'omkrets' = $omkrets \n", color =:176)
-                o = post_beta_vegnett_rute(ea1, no1, ea2, no2; omkrets)
-                @assert !isempty(o)
-                ! iszero(o.metadata.antall) && break
+                for x in range(min_omkrets, max_omkrets, length = 18)
+                    omkrets = Int64(round(x))
+                    printstyled("Retrying route request $(link_split_key(ea1, no1, ea2, no2)) with 'omkrets' = $omkrets \n", color =:176)
+                    o = post_beta_vegnett_rute(ea1, no1, ea2, no2; omkrets)
+                    @assert o.type == "Rute"
+                    !isempty(o.vegnettsrutesegmenter) && break
+                end
             end
         end
-        # TODO: Drop 'antall', specify that in the request
-        if iszero(o.metadata.antall)
+        if isempty(o.vegnettsrutesegmenter)
             msg = extract_prefixed_vegsystemreferanse(o, ea1, no1, ea2, no2)[1]
-            @assert ! iszero(o.metadata.antall) "$msg"
+            @assert ! isempty(o.vegnettsrutesegmenter) "$msg"
         end
         push!(q.patches, o)
     end

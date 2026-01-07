@@ -1,6 +1,7 @@
+# This simply tries out syntaxes.
 using Test
 using RouteSlopeDistance
-using RouteSlopeDistance: LOGSTATE, interval_progression_pairs
+using RouteSlopeDistance: LOGSTATE, interval_progression_pairs, fixed
 import HTTP
 using JSON3: pretty
 # We don't need to print our 
@@ -51,7 +52,8 @@ vsrs = map(o.vegnettsrutesegmenter) do s
     r.kortform
 end
 multi_linestring = Vector{Vector{Tuple{Float64, Float64, Float64}}}()
-# v3 - v4: An extra space, now: 
+# v3 - v4: An extra space.
+# Note this is implemented in `parse_multilinestring_values_and_structure`
 # julia> s.geometri.wkt
 # "LINESTRING Z (354..."
 multi_linestring = map(o.vegnettsrutesegmenter) do s

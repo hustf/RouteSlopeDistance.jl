@@ -65,7 +65,8 @@ function route_leg_data(easting1::T, northing1::T, easting2::T, northing2::T; de
     # vegsystemreferanser, individual lengths of each ref, and curve
     # geometry for each. All packed in q...
     q = patched_post_beta_vegnett_rute(easting1, northing1, easting2, northing2)
-    refs = extract_prefixed_vegsystemreferanse(q)
+    refs, revs = extract_prefixed_vegsystemreferanse(q)
+    @show revs
     @assert ! startswith(refs[1], "Error") refs[1]
     # The length of individual segments 
     lengths = extract_length(q)
@@ -76,7 +77,8 @@ function route_leg_data(easting1::T, northing1::T, easting2::T, northing2::T; de
     if progression_at_ends == [0.0, 0.0]
         # Sometimes we get a zero-length distance. For example, 
         # a ferry crossing. This happens if ea1 == ea2 && no1 == no2
-        # after we ran request modficiations (or even before) 
+        # after we ran request modficiations (or even before)
+        throw("TODO: examine why. Ferries are now considered (API v4) with points on sea.")
         thisdata = Dict(:key => key,
                         :progression_at_ends => progression_at_ends,
                         )
@@ -87,6 +89,8 @@ function route_leg_data(easting1::T, northing1::T, easting2::T, northing2::T; de
     # 3d points, nested. Some were received in the opposite direction of our request,
     # then reversed. 
     mls, reversed = extract_multi_linestrings(q)
+    @show reversed
+    @assert reversed == revs "reversed = $reversed \n\t revs = $revs"
     @assert length(progression_at_ends) == length(mls) + 1
     @assert length(mls) == length(reversed)
     # Use bsplines to find signed radius of curvature.
@@ -103,6 +107,11 @@ function route_leg_data(easting1::T, northing1::T, easting2::T, northing2::T; de
     # Now ask for related information, and unpack it.    
     # 
     # The tuples refer to the nominal direction of segments
+    # Consider TODO: Test the exact location of changes in fartsgrense within a segment.
+    # This would be easier on long segments, and easier graphically. Don't trust the current
+    # values to be exact. The same goes for the exact location of speed bumps. 'metrering'
+    # is quite complicated in some places.
+    @show refs reversed
     fartsgrense_tuples = fartsgrense_from_prefixed_vegsystemreferanse.(refs, reversed)
     # End stops may be without defined fartsgrense. However, we need 
     # a start value, so modify if missing:
@@ -191,8 +200,8 @@ end
     unique_unnested_coordinates_of_multiline_string(mls::Vector{ Vector{Tuple{Float64, Float64, Float64}}})
     ---> Vector{Float64}, Vector{Float64}, Vector{Float64}
 
-We're joining curves where two ends are identical
-(we don't check that though)
+We're joining curves where two ends are identical.
+We don't check that though, so if you take unordered segments in here, it's on you.
 """
 function unique_unnested_coordinates_of_multiline_string(mls::Vector{ Vector{Tuple{Float64, Float64, Float64}}})
     vx = Float64[] 
@@ -270,7 +279,7 @@ Prepare or look up entries for link splits.
 One could make the value (the replacement) manually from
 e.g. Norgeskart.   
 
-# TODO: Use tuple notation, with comma: (a, b)
+# Consider TODO: Use tuple notation, with comma: (a, b)
 """
 link_split_key(ea1, no1, ea2, no2) = "($(Int(round(ea1))) $(Int(round(no1))))-($(Int(round(ea2))) $(Int(round(no2))))"
 function link_split_key(start_pt::T, end_pt::T) where T<:Tuple{Float64, Float64, Float64}

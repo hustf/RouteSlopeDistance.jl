@@ -1,13 +1,7 @@
 using Test
 using RouteSlopeDistance
-#using RouteSlopeDistance: patched_post_beta_vegnett_rute, coordinate_key, get_config_value
-#using RouteSlopeDistance: corrected_coordinates, link_split_key
-#using RouteSlopeDistance: extract_length, extract_multi_linestrings, extract_prefixed_vegsystemreferanse
-#using RouteSlopeDistance: reverse_linestrings_where_needed!
-#using RouteSlopeDistance: Quilt, amend_fromtos!
-#using RouteSlopeDistance: build_fromtos!, correct_coordinates!, build_patches!
 using Plots
-
+import RouteSlopeDistance: plot_elevation_and_slope_vs_progression
 !@isdefined(M) && begin
 
 const M = ["Hareid bussterminal" 36976 6947659; "Hareid ungdomsskule fv. 61" 36533 6947582; "Holstad" 35983 6947673; "Grimstad aust" 35465 6947468; "Grimstad vest" 34866 6947308; "Bjåstad aust" 34418 6947105; "Bjåstad vest" 34054 6946887; "Bigsetkrysset" 33729 6946682; "Byggeli" 33142 6946489; "Nybøen" 32852 6946449; "Korshaug" 32344 6946360; "Rise aust" 31909 6946301; "Rise" 31515 6946166; "Rise vest" 31167 6946060; "Varleitekrysset" 29426 6945335; "Ulstein vgs." 28961 6945248; "Støylesvingen" 28275 6945289; "Holsekerdalen" 27714 6945607; "Ulsteinvik skysstasjon" 27262 6945774; "Saunes nord" 27457 6945077; "Saunes sør" 27557 6944744; "Strandabøen" 27811 6944172; "Dimnakrysset" 27721 6943086; "Botnen" 26807 6941534; "Garneskrysset" 26449 6940130; "Dragsund sør" 24823 6939041; 
@@ -76,6 +70,37 @@ function plot_inspect_continuity(mls; order = nothing, reversed = nothing)
     #
     pl
 end
+
+
+
+function plot_speed_limit_vs_progression!(p, s, speed_limitation, progression_at_ends, refs)
+    title!(p, "Speed limit [km/h]- Progression [m]")
+    plot!(p, s, speed_limitation)
+    vline!(p, progression_at_ends, line=(1, :dash, 0.6, [:salmon :green :red]))
+    for i in 1:(length(refs) - 1)
+        xs = (progression_at_ends[i] + progression_at_ends[i + 1]) / 2
+        ref = "$i:" * refs[i][5:end]
+        j = findfirst(x -> x > xs, s )
+        y = (maximum(speed_limitation) + minimum(speed_limitation)) / 2
+        t = text(ref, 6, :center, :top, :blue, rotation = -30)
+        annotate!(p, [(xs, y, t)])
+    end
+    p
+end
+function plot_speed_limit_vs_progression!(p, d::Dict)
+    speed_limitation = d[:speed_limitation]
+    s = d[:progression]
+    refs = d[:prefixed_vegsystemreferanse]
+    progression_at_ends = d[:progression_at_ends]
+    plot_speed_limit_vs_progression!(p, s, speed_limitation, progression_at_ends, refs)
+end
+
+function plot_elevation_slope_speed_vs_progression(d::Dict, na1, na2)
+    p = plot_elevation_and_slope_vs_progression(d, na1, na2; layout = (2, 1))
+    plot_speed_limit_vs_progression!(p[2], d)
+    p
+end
+
 
 end # @isdefined
 

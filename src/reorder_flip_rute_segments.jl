@@ -85,7 +85,17 @@ end
 segments_sortorder_and_reversed(o::JSON3.Object, ea1, no1; tol = 1.0)
 segments_sortorder_and_reversed(segments::Vector{Vector{Tuple{Float64,Float64,Float64}}}, 
     ea1, no1; tol = 1.0)
+  --> Vector{Int}, Vector{Bool} 
 
+Returns ('order', 'reversed').
+
+`o` and `segments` contain unordered segments. Each segment is sorted, but may be flipped.
+
+"Wanted order" is defined by Utm point '(ea1, no1)'. That point  has a distance to both ends of 'o' and 'segments'. 
+The closer end indicates which should be first after reordering.
+
+- 'order' is the permutations necessary to segments for the wanted order.
+- 'reversed' indicates which segments (in the original order) needs to be reversed for the wanted point order. 
 """
 function segments_sortorder_and_reversed(segments::Vector{Vector{Tuple{Float64,Float64,Float64}}}, ea1, no1;
                         tol = 1.0)

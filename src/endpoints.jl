@@ -84,7 +84,7 @@ function post_beta_vegnett_rute(easting1, northing1, easting2, northing2; omkret
 
     body = Dict([
         #v3:typeveg                => "kanalisertVeg,enkelBilveg,rampe,rundkjøring,gangOgSykkelveg"
-        :typeveg                => ["Kanalisert veg", "Enkel bilveg", "Rampe", "Rundkjøring", "Gang- og sykkelveg"]
+        :typeveg                => ["Kanalisert veg", "Enkel bilveg", "Rampe", "Rundkjøring", "Gang- og sykkelveg", "Bilferje"]
         :konnekteringslenker    => true
         :start                  => "$(fixed(easting1)) , $(fixed(northing1))"
         :trafikantgruppe        => "K"

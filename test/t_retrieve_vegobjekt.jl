@@ -34,7 +34,7 @@ end)
 #print.(lpad.(sort(collect(keys(catalogue))), 40));
 catalogue["Fartsgrense"]
 catalogue["Fartsdemper"]
-# We are interested in "Fartsgrense"
+@test catalogue["Fartsdemper"][:id] == 103
 vegobjekttype_id = catalogue["Fartsgrense"][:id]
 @test vegobjekttype_id == 105
 
@@ -51,7 +51,6 @@ j = 1
 url = "vegobjekter/$vegobjekttype_id/$(subref_ids[j])/1"
 sub_o = nvdb_request(url)[1]
 @test length(sub_o.egenskaper) == 3
-
 egenskaper = filter(e->e.navn == "Fartsgrense", sub_o.egenskaper)
 @test length(egenskaper) == 1
 egenskap = egenskaper[1]
@@ -132,7 +131,7 @@ vs = [vegsegmenter1[1], vegsegmenter2[1], vegsegmenter2[2], vegsegmenter2[3], ve
 ref = refs[6]
 @test extract_from_to_meter(ref) == (143,161)
 @test extract_kategori_fase_nummer(ref) == "FV61"
-o = get_vegobjekter__vegobjekttypeid_(vegobjekttype_id, ref; inkluder = "egenskaper,vegsegmenter")
+o = get_vegobjekter__vegobjekttypeid_(vegobjekttype_id, ref; inkluder = ["egenskaper", "vegsegmenter"])
 vs = o.objekter[1].vegsegmenter;
 @test ! is_segment_relevant(ref, vs[1])
 @test ! is_segment_relevant(ref, vs[2])
