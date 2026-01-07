@@ -1,6 +1,6 @@
 name = "RouteSlopeDistance"
 uuid = "07025e9e-5a27-4179-b043-88080b1ee239"
-version = "0.3.4"
+version = "0.4.0"
 authors = ["hustf <hustf@users.noreply.github.com> and contributors"]
 
 [deps]

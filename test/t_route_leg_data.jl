@@ -100,12 +100,13 @@ d = route_leg_data(ea1, no1, ea2, no2)
 
 
 
-# The below takes several minutes, and serializes these request for faster run next time.
+# The below takes 1-2 minutes, and serializes these request for faster run 
+# (0.1 second next time).
 # Call `delete_memoization_file` to start over.
 rws = 1:(size(M)[1])
-for (start, stop) in zip(rws[1: (end - 1)], rws[2:end])
+@time for (start, stop) in zip(rws[1: (end - 1)], rws[2:end])
     na1, ea1, no1 = M[start, :]
-    na2, ea2, no2 = M[stop, :]-+
+    na2, ea2, no2 = M[stop, :]
     print("\n", lpad("$start $stop", 5), "  ", lpad(na1, 30), " -> ", rpad(na2, 30), " ")
     println(link_split_key(ea1, no1, ea2, no2))
     d = route_leg_data(ea1, no1, ea2, no2)
@@ -122,25 +123,11 @@ na2, ea2, no2 = M[stop, :]
 title = rpad("$start", 3) * na1 * " til " * na2
 print(lpad("$start $stop", 5), "  ", lpad(na1, 30), " -> ", rpad(na2, 30), " ")
 println(link_split_key(ea1, no1, ea2, no2))
-
-q = patched_post_beta_vegnett_rute(ea1, no1, ea2, no2)
-mls  = parse_multilinestring_values_and_structure(q)
-order, reversed = segments_sortorder_and_reversed(mls, ea1, no1)
-original_start = mls[7][1][1]
-reversed[1]
-pl = plot_inspect_continuity(mls; order, reversed );
-title!(pl[2], na1 * " til " * na2)
-lengths = extract_length(q)
-refs, revs = extract_prefixed_vegsystemreferanse(q)
-reversed == revs
-
-
 d = route_leg_data(ea1, no1, ea2, no2)
 pl = plot_elevation_slope_speed_vs_progression(d, na1, na2)
 title!(pl[1], title)
 
-
-# Reverse, which requires reading speed limits from a sideanlegg.
+# 
 start, stop = 45, 44
 na1, ea1, no1 = M[start, :]
 na2, ea2, no2 = M[stop, :]
@@ -152,7 +139,7 @@ pl = plot_elevation_slope_speed_vs_progression(d, na1, na2)
 title!(pl[1], title)
 
 
-# This works fine
+# 
 start, stop = 25, 26
 na1, ea1, no1 = M[start, :]
 na2, ea2, no2 = M[stop, :]
@@ -214,8 +201,25 @@ d = route_leg_data(ea1, no1, ea2, no2)
 pl = plot_elevation_slope_speed_vs_progression(d, na1, na2)
 title!(pl[1], title)
 
+
+
+na2 = "Dragsund vest"
+ea2 = 25183
+no2 = 6939251
+na1 = "Dragsund aust"
+ea1 = 25589
+no1 = 6939427
+title = rpad("$start", 3) * na1 * " til " * na2
+print(lpad("", 5), "  ", lpad(na1, 30), " -> ", rpad(na2, 30), " ")
+println(link_split_key(ea1, no1, ea2, no2))
+d = route_leg_data(ea1, no1, ea2, no2)
+pl = plot_elevation_slope_speed_vs_progression(d, na1, na2)
+title!(pl[1], title)
+
+
+
+
 # Test a ferry journey. 
-# Such a request ought to return an empty dictionary.
 # Koparneset ferjekai  Årvika ferjekai (13869 6928277)-(13742 6930773)
 na1 = "Koparneset ferjekai"
 ea1 = 13869

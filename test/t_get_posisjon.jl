@@ -16,7 +16,7 @@ import HTTP
 resp = HTTP.request(method, url, idfields)
 
 url = "vegnett/api/v4/" * "posisjon?nord=7038165&ost=269815"
-o = nvdb_request(url)[1]
+o = nvdb_request(url)
 
 
 # A single test first. This point should be fine.

@@ -24,9 +24,12 @@ ref_from, ref_to = extract_from_to_meter(refs[1])
 # v3: "vegobjekttyper"
 # v4: https://nvdb-docs.atlas.vegvesen.no/nvdbapil/v4/Datakatalog
 LOGSTATE.request_string = true
-url_ext = "/datakatalog/api/v1/vegobjekttyper"
-resp = nvdb_request(url_ext)
-catalogue_obj = resp[1]
+#url_ext = "/datakatalog/api/v1/vegobjekttyper"
+#resp = nvdb_request(url_ext)
+url = "https://nvdbapiles.atlas.vegvesen.no//datakatalog/api/v1/vegobjekttyper"
+idfields = ["X-Client-Session" => "06fa4a37-ac15-442d-8d2a-67b34933de26 2026-01-07T12:52:16.968", "X-Client" => "RouteSlopeDistance.jl 0.0.1 temp_script", "User-Agent" => "RouteSlopeDistance.jl 0.0.1 temp_script", "Accept" => "application/vnd.vegvesen.nvdb-v3-rev2+json", "Content-Type" => "application/json"]
+resp = HTTP.request("GET", url, idfields);
+catalogue_obj = RouteSlopeDistance.JSON3.read(resp.body)
 @test length(catalogue_obj) >= 422
 catalogue = Dict(map(catalogue_obj) do o
     o.navn => Dict(o)
@@ -42,14 +45,14 @@ vegobjekttype_id = catalogue["Fartsgrense"][:id]
 i = 1
 ref = refs[i]
 url = "vegobjekter/$vegobjekttype_id?&vegsystemreferanse=$ref"
-o = nvdb_request(url)[1]
+o = nvdb_request(url)
 @test o.metadata.returnert == 1
 subref_ids = map(o.objekter) do s
     s.id
 end
 j = 1
 url = "vegobjekter/$vegobjekttype_id/$(subref_ids[j])/1"
-sub_o = nvdb_request(url)[1]
+sub_o = nvdb_request(url)
 @test length(sub_o.egenskaper) == 3
 egenskaper = filter(e->e.navn == "Fartsgrense", sub_o.egenskaper)
 @test length(egenskaper) == 1
@@ -63,7 +66,7 @@ egenskap = egenskaper[1]
 vegobjekttype_id = 105
 inkluder = "egenskaper"
 url = "vegobjekter/$vegobjekttype_id?&vegsystemreferanse=$ref&inkluder=$inkluder"
-o = nvdb_request(url)[1]
+o = nvdb_request(url)
 # v3: antall. v4: returnert
 @test o.metadata.returnert == 1
 @test length(o.objekter) == 1

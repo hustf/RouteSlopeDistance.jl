@@ -23,7 +23,7 @@ function get_posisjon(easting::T, northing::T;
     url = "posisjon?nord=$(fixed(northing))&ost=$(fixed(easting))"
     url *= "& maks_avstand = $maks_avstand"
     url *= "& trafikantgruppe =  $trafikantgruppe "
-    o = nvdb_request(url)[1]
+    o = nvdb_request(url)
     if o isa AbstractArray
         # A successful response methinks
         @assert ! isempty(o) "Empty response to $url"
@@ -82,7 +82,7 @@ function post_beta_vegnett_rute(easting1, northing1, easting2, northing2; omkret
     #16"Annet"
 
 
-    body = Dict([
+    body = Dict{Symbol, Any}([
         #v3:typeveg                => "kanalisertVeg,enkelBilveg,rampe,rundkjøring,gangOgSykkelveg"
         :typeveg                => ["Kanalisert veg", "Enkel bilveg", "Rampe", "Rundkjøring", "Gang- og sykkelveg", "Bilferje"]
         :konnekteringslenker    => true
@@ -97,7 +97,7 @@ function post_beta_vegnett_rute(easting1, northing1, easting2, northing2; omkret
         ])
     push!(body, :omkrets => omkrets)
     # Make the call, get a json object
-   nvdb_request("vegnett/api/v4/beta/vegnett/rute", "POST"; body)[1]
+   nvdb_request("vegnett/api/v4/beta/vegnett/rute", "POST"; body)
 end
 
 
@@ -117,7 +117,7 @@ function get_vegobjekter__vegobjekttypeid_(vegobjekttype_id, vegsystemreferanse:
     u = "vegobjekter/$vegobjekttype_id"
     a = urlstring(;  vegsystemreferanse = vegsystemreferanse, inkluder, alle_versjoner, segmentering, kommune)
     url = build_query_string(u, a)
-    o, waitsec = nvdb_request(url)
+    o = nvdb_request(url)
     isempty(o) && throw("Request failed, check connection")
     o
 end

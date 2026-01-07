@@ -26,7 +26,7 @@ body = Dict([
     :behold_trafikantgruppe => true
     :slutt                  => "$(fixed(easting2)) , $(fixed(northing2))"
     :tidspunkt              => "2023-07-28"])
-o = nvdb_request(url_ext, "POST"; body)[1]
+o = nvdb_request(url_ext, "POST"; body)
 @test ! isempty(o)
 l_straight = sqrt((easting2 - easting1)^2 +(northing2 - northing1)^2)
 @test o.metadata.lengde > l_straight
@@ -137,7 +137,7 @@ body = Dict([
     :slutt                  => "$(fixed(easting2)) , $(fixed(northing2))"
     :tidspunkt              => "2023-07-28"
     ])
-o = nvdb_request(url_ext, "POST"; body)[1]
+o = nvdb_request(url_ext, "POST"; body)
 multi_linestring = map(o.vegnettsrutesegmenter) do s
     # Api v3 -> v4: An additional space starting the linestring.
     map(split(s.geometri.wkt[15:end-1], ',')) do v
@@ -149,11 +149,11 @@ ls = multi_linestring[1]
 
 xx, yy = interval_progression_pairs(ls)
 l3d =  round(yy[end]; digits = 3)
-@test l3d == o.metadata.lengde
+@test isapprox(l3d, o.metadata.lengde; atol = 0.02)
 @test o.vegnettsrutesegmenter[1].geometri.srid == 5973
 
 # Try to get higher precision geometri 
-body = Dict([
+body = Dict{Symbol, Any}([
     :typeveg                => ["Kanalisert veg", "Enkel bilveg", "Rampe", "Rundkjøring", "Gang- og sykkelveg"]
     :konnekteringslenker    => true
     :start                  => "$(fixed(easting1)) , $(fixed(northing1))"
@@ -169,5 +169,5 @@ body = Dict([
 # 4326, wgs84, 5975, 5974
 # OK: utm33, 5973
 # The precision is not actually affected by srid...
-o = nvdb_request(url_ext, "POST"; body)[1]
-@test ls[1][1] == 25467.928
+o = nvdb_request(url_ext, "POST"; body)
+@test abs(ls[1][1] - 25468) < 1

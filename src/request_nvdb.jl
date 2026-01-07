@@ -2,23 +2,18 @@
 
 """
     nvdb_request(url_ext::String, method::String= "GET"; 
-                    body = "", logstate = LOGSTATE)
-     -> (r::JSON3.Object, retry_in_seconds::Int)
+                    Dict{Symbol, Any}(), logstate = LOGSTATE)
+     --> JSON3.Object{Base.CodeUnits{UInt8, String}, Vector{UInt64}}
 
 Access the nvdb Web API. This is called by every function 
 in `endpoints.jl`.
 
-Error results return an empty 'r', possibly with a 'retry_in_seconds'.
-Errors are written to 'stderr', expect for 'API rate limit exceeded', as 
-the output would typically occur in the middle of recursive calls.
+Error results return an empty response object, while errors are written to 'stderr' / `stdout`.
 """
-function nvdb_request(url_ext::String, method::String = "GET"; body = "",
+function nvdb_request(url_ext::String, method::String = "GET"; body::Dict{Symbol, Any} = Dict{Symbol, Any}(),
     logstate = LOGSTATE)
-    if ! (body isa String)
-        sbody = JSON3.write(body)
-    else
-        sbody = body
-    end
+    #
+    sbody = String(JSON3.write(body))
     # Not so cool, but this is how we get rid of spaces in vectors of strings:
     url_ext = replace(url_ext, ' ' => "")
     url = "$BASEURL$url_ext"
@@ -56,39 +51,41 @@ function nvdb_request(url_ext::String, method::String = "GET"; body = "",
             end
             if e.status == 400 
                 @info msg
-                return JSON3.Object(), 0
+                return JSON3.Object()
             elseif e.status == 403
                 @info msg
                 printstyled("  This message may have been triggered by insufficient identification.\n", color = :red)
                 logstate.authorization && printstyled("               id fields: ", idfields, "\n", color = :red)
-                return JSON3.Object(), 0
+                return JSON3.Object()
             elseif e.status == 404 # Not found.
                 response_object = JSON3.read(response_body)
                 if response_object[1].code == 4012
-                    return response_object[1], 0
+                    @warn response_object[1]
+                    return JSON3.Object()
                 else
                     @info msg
-                    return JSON3.Object(), 0
+                    return JSON3.Object()
                 end
             elseif e.status == 405
                 @info msg 
-                return JSON3.Object(), 0
+                return JSON3.Object()
             elseif e.status == 422 
                 @info msg
                 printstyled(" (status code:) $(e.status) (meaning:) $code_meaning ",  "\n", color = :red)
-                return JSON3.Object(), 0
+                return JSON3.Object()
             elseif e.status == 429 # API rate limit temporarily exceeded.
                 @info msg
-                retry_in_seconds =  HTTP.header(e.response, "retry-after") 
-                return JSON3.Object(), parse(Int, retry_in_seconds)
+                retry_in_seconds =  HTTP.header(e.response, "retry-after")
+                @warn retry_in_seconds 
+                return JSON3.Object()
             elseif e.status == 500
                 @info msg 
                 printstyled(" (status code:) $(e.status) (meaning:) $code_meaning ",  "\n", color = :red)
-                return JSON3.Object(), 0
+                return JSON3.Object()
             else # 401 probably
                 @info msg
                 @warn "Error code $(e.status)."
-                return JSON3.Object(), 0
+                return JSON3.Object()
             end
         else
             msg = "HTTP.request call (unexpected error): method = $method\n header with identification fields = $idfields \n $url_ext"
@@ -96,31 +93,32 @@ function nvdb_request(url_ext::String, method::String = "GET"; body = "",
             if e isa HTTP.Exceptions.ConnectError
                 @error string(e.url)
                 @error string(e.error)
-                return JSON3.Object(), 0
+                return JSON3.Object()
             elseif e isa HTTP.RequestError
                 @error string(e.error)
-                return JSON3.Object(), 0
+                return JSON3.Object()
             else
                 response_body = e.response.body |> String
                 code_meaning = "?"
                 msg = "$(e.status): $code_meaning"
                 @error msg
                 @error string(e)
-                return JSON3.Object(), 0
+                return JSON3.Object()
             end
         end
     end
     response_body = resp.body |> String
     if method == "PUT" || method == "DELETE"
         if response_body == "" && resp.status ∈ [200, 201, 202, 203, 204]
-            return JSON3.Object(), 0
+            return JSON3.Object()
         elseif resp.status ∈ [200, 201, 202, 203, 204]
-            return JSON3.read(response_body), 0
+            @warn JSON3.read(response_body)
+            return JSON3.Object()
         else
             code_meaning = get(RESP_DIC, Int(resp.status), "")
             msg = "$(resp.status): $code_meaning"
             @info msg
-            return JSON3.Object(), 0
+            return JSON3.Object()
         end
     else
         if resp.status == 204
@@ -129,9 +127,31 @@ function nvdb_request(url_ext::String, method::String = "GET"; body = "",
                 msg = "$(resp.status): $code_meaning"
                 @info msg
             end
-            return JSON3.Object(), 0
+            return JSON3.Object()
         else
-            return JSON3.read(response_body), 0
+            obj = JSON3.read(response_body)
+            # If it's an array, wrap it.
+            if isa(obj, JSON3.Object)
+                obj
+            elseif isa(obj, JSON3.Array)
+                msg = "Unexpected return type: An array of JSON3 objects. Please make the request directly without going through nvdb_request:\n"
+                if method == "GET"
+                    msg *= "resp = HTTP.request(\"GET\", url, idfields);\n"
+                    msg *= "where url = \"$url\"\n"
+                    msg *= "and idfields = $idfields\n"
+                    msg *= "oarr = JSON3.read(resp.body)"
+                    @warn msg
+                    return JSON3.Object() 
+                else
+                    msg *= "resp = HTTP.request($method, $url, $idfields, $sbody);\n"
+                    msg *= "oarr = JSON3.read(resp.body)"
+                    @warn msg
+                    return JSON3.Object() 
+                end
+            else
+                msg = "Unexpected return type: $(typeof(obj))"
+                throw(ErrorException(msg))
+            end
         end
     end
 end
