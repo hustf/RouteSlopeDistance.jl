@@ -19,7 +19,7 @@ For easy copy / paste from map applications, 's' can be any string containing ur
 
 # Output notes
 
-`slope` is horizontal progression / vertical progression. Positive is uphill.
+`slope` is vertical / horizontal progression. Positive is uphill.
 'radius of curvature' is signed. The vertical component of curves are ignored, but may slightly affect the result. See test example.
 `speed limitation` include a reduction from speed humps of 15 km/t at those points.
 'key' is included for backward reference, and can be reused as input argument.
@@ -66,7 +66,6 @@ function route_leg_data(easting1::T, northing1::T, easting2::T, northing2::T; de
     # geometry for each. All packed in q...
     q = patched_post_beta_vegnett_rute(easting1, northing1, easting2, northing2)
     refs, revs = extract_prefixed_vegsystemreferanse(q)
-    @show revs
     @assert ! startswith(refs[1], "Error") refs[1]
     # The length of individual segments 
     lengths = extract_length(q)
@@ -89,7 +88,6 @@ function route_leg_data(easting1::T, northing1::T, easting2::T, northing2::T; de
     # 3d points, nested. Some were received in the opposite direction of our request,
     # then reversed. 
     mls, reversed = extract_multi_linestrings(q)
-    @show reversed
     @assert reversed == revs "reversed = $reversed \n\t revs = $revs"
     @assert length(progression_at_ends) == length(mls) + 1
     @assert length(mls) == length(reversed)
@@ -106,12 +104,13 @@ function route_leg_data(easting1::T, northing1::T, easting2::T, northing2::T; de
     # We have unpacked the useful information from the first request.
     # Now ask for related information, and unpack it.    
     # 
-    # The tuples refer to the nominal direction of segments
-    # Consider TODO: Test the exact location of changes in fartsgrense within a segment.
-    # This would be easier on long segments, and easier graphically. Don't trust the current
-    # values to be exact. The same goes for the exact location of speed bumps. 'metrering'
-    # is quite complicated in some places.
-    @show refs reversed
+    # The tuples refer to the nominal direction of segments.
+    # Robustly testing the exact location of changes in fartsgrense within a selection of segments
+    # is hard.
+    # This would be easier on long segments, and easier graphically. 
+    # The same goes for the exact location of speed bumps. 'metrering'
+    # is quite complicated in some places. However, segments with changes may often be short,
+    # so this is of no great importance to travel times.
     fartsgrense_tuples = fartsgrense_from_prefixed_vegsystemreferanse.(refs, reversed)
     # End stops may be without defined fartsgrense. However, we need 
     # a start value, so modify if missing:
@@ -240,6 +239,15 @@ function plot_elevation_and_slope_vs_progression(d::Dict, name1, name2; layout =
     plot_elevation_and_slope_vs_progression!(p[1], d, name1, name2)
 end
 
+"""
+    plot_elevation_slope_speed_vs_progression(d::Dict, na1, na2)
+
+"""
+function plot_elevation_slope_speed_vs_progression(d::Dict, na1, na2)
+    p = plot_elevation_and_slope_vs_progression(d, na1, na2; layout = (2, 1))
+    plot_speed_limit_vs_progression!(p[2], d)
+    p
+end
 
 """
     coordinate_key(ingoing::Bool, ea, no)

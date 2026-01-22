@@ -8,6 +8,7 @@ const M = ["Hareid bussterminal" 36976 6947659; "Hareid ungdomsskule fv. 61" 365
 "Myrvåglomma" 23911 6938921; "Myrvåg" 23412 6939348; "Aurvåg" 22732 6939786; "Aspevika" 22119 6939611; "Kalveneset" 21508 6939662; "Tjørvåg indre" 20671 6939661; "Tjørvåg" 20296 6939961; "Tjørvågane" 20222 6940344; "Tjørvåg nord" 20408 6940732; "Rafteset" 20794 6941312; "Storneset" 20779 6941912; "Stokksund" 20353 6942412; "Notøy" 19429 6943497; "Røyra øst" 19922 6944583; "Røyra vest" 19605 6944608; "Frøystadvåg" 19495 6945400; "Frøystadkrysset" 19646 6945703; "Nerøykrysset" 18739 6946249; "Berge bedehus" 17919 6946489; "Elsebøvegen" 17680 6946358; "Verket" 17441 6946183; "Berge" 17255 6946053; "Hjelmeset" 16949 6945880; "Demingane" 16575 6945717; "Eggesbønes" 16078 6945699; "Myklebust" 16016 6945895; "Herøy kyrkje" 16156 6946651; "Fosnavåg sparebank" 16235 6947271; "Fosnavåg terminal" 16064 6947515]
 
 function plot_inspect_continuity!(pl::Plots.Plot{Plots.GRBackend}, mls; continuous = false, kws...)
+    throw("ok")
     vx = Float64[]
     vy = Float64[]
     vz = Float64[]
@@ -45,6 +46,7 @@ end
 
 
 function plot_inspect_continuity(mls; order = nothing, reversed = nothing)
+        throw("ok")
     pl = plot( size = (1200, 1000); layout = 6)
     plot_inspect_continuity!(pl, mls)
     if ! isnothing(order) 
@@ -73,33 +75,7 @@ end
 
 
 
-function plot_speed_limit_vs_progression!(p, s, speed_limitation, progression_at_ends, refs)
-    title!(p, "Speed limit [km/h]- Progression [m]")
-    plot!(p, s, speed_limitation)
-    vline!(p, progression_at_ends, line=(1, :dash, 0.6, [:salmon :green :red]))
-    for i in 1:(length(refs) - 1)
-        xs = (progression_at_ends[i] + progression_at_ends[i + 1]) / 2
-        ref = "$i:" * refs[i][5:end]
-        j = findfirst(x -> x > xs, s )
-        y = (maximum(speed_limitation) + minimum(speed_limitation)) / 2
-        t = text(ref, 6, :center, :top, :blue, rotation = -30)
-        annotate!(p, [(xs, y, t)])
-    end
-    p
-end
-function plot_speed_limit_vs_progression!(p, d::Dict)
-    speed_limitation = d[:speed_limitation]
-    s = d[:progression]
-    refs = d[:prefixed_vegsystemreferanse]
-    progression_at_ends = d[:progression_at_ends]
-    plot_speed_limit_vs_progression!(p, s, speed_limitation, progression_at_ends, refs)
-end
 
-function plot_elevation_slope_speed_vs_progression(d::Dict, na1, na2)
-    p = plot_elevation_and_slope_vs_progression(d, na1, na2; layout = (2, 1))
-    plot_speed_limit_vs_progression!(p[2], d)
-    p
-end
 
 
 end # @isdefined

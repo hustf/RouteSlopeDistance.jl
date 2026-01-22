@@ -14,8 +14,11 @@ import LinearAlgebra
 using LinearAlgebra: norm
 import Base
 import Base.length
+using PrecompileTools
 export route_leg_data, delete_memoization_file, nvdb_request, unique_unnested_coordinates_of_multiline_string,
-    plot_elevation_and_slope_vs_progression, link_split_key, coordinate_key
+    plot_elevation_and_slope_vs_progression, plot_elevation_slope_speed_vs_progression,
+    link_split_key, coordinate_key
+
 
 """
 struct Quilt
@@ -48,4 +51,30 @@ include("vegdata_from_vegsystemreferanse.jl")
 include("curvature_bsplines.jl")
 include("memoization_file.jl")
 include("plot.jl")
+
+
+# PrecompileTools
+@setup_workload begin
+    # Putting some things in `@setup_workload` instead of `@compile_workload` can reduce the size of the
+    # precompile file and potentially make loading faster.
+    # (too much work for me)
+    @compile_workload begin
+        # all calls in this block will be precompiled, regardless of whether
+        # they belong to your package or not (on Julia 1.8 and higher)
+        #
+        na2 = "Dragsund vest"
+        ea2 = 25183
+        no2 = 6939251
+        na1 = "Dragsund aust"
+        ea1 = 25589
+        no1 = 6939427
+        title = na1 * " til " * na2
+        d = route_leg_data(ea1, no1, ea2, no2)
+        pl = plot_elevation_slope_speed_vs_progression(d, na1, na2)
+        title!(pl[1], title)
+        plot_elevation_and_slope_vs_progression(d, na1, na2)
+        nothing
+    end
+end
+
 end

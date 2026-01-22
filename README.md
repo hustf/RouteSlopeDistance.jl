@@ -10,7 +10,10 @@ Processed data is available through `route_leg_data(A, B)`, where `A` and `B` ar
 - progression
 - database references
 
-There's also a plot definition for checking, `plot_elevation_and_slope_vs_progression`, which uses `Plots.jl`.
+There's also a couple of plot definitions (`Plots.jl`) included, for spot checking. See tests for more map-like plots, but full visualizations belong elsewhere:
+
+  -  `plot_elevation_and_slope_vs_progression`
+  -  `plot_elevation_slope_speed_vs_progression`
 
 You can fetch other data, e.g. traffic counts, road class or surface, by adapting functions from `endpoints.jl`.
 
