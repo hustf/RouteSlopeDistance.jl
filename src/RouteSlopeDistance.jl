@@ -17,24 +17,24 @@ import Base.length
 using PrecompileTools
 export route_leg_data, delete_memoization_file, nvdb_request, unique_unnested_coordinates_of_multiline_string,
     plot_elevation_and_slope_vs_progression, plot_elevation_slope_speed_vs_progression,
-    link_split_key, coordinate_key
+    link_split_key, coordinate_key, join_route_data
 
 
 """
-struct Quilt
-    fromtos::Vector{Vector{Int64}}
-    patches::Vector{JSON3.Object}
-end
+    struct Quilt
+        fromtos::Vector{NTuple{4, Int64}}
+        patches::Vector{JSON3.Object}
+    end
 
 - `fromtos`: Splits a user from-to request, based on manual fixes stored in RouteSlopeDistance.ini
 - `patches`: Unmodified web api returns. Same number of patches as in `fromtos`
 """
 struct Quilt
-    fromtos::Vector{Vector{Int64}}
+    fromtos::Vector{NTuple{4, Int64}}
     patches::Vector{JSON3.Object}
 end
 # We don't offer an external constructor with values, see `build_fromtos!`.
-Quilt() = Quilt(Vector{Vector{Int64}}(), Vector{JSON3.Object}())
+Quilt() = Quilt(Vector{NTuple{4, Int64}}(), Vector{JSON3.Object}())
 length(q::Quilt) = length(q.fromtos)
 
 include("ini_file.jl")

@@ -27,7 +27,7 @@ end
 "Do a, rather slow, lookup and potential insertion from the .ini file."
 function build_fromtos!(q::Quilt, ea1::T, no1::T, ea2::T, no2::T) where T<:Int64
     before = copy(q.fromtos)
-    push!(q.fromtos, [ea1, no1, ea2, no2])
+    push!(q.fromtos, (ea1, no1, ea2, no2))
     while ! (q.fromtos == before)  # beware: q.fromtos !== before is incorrect
         before = copy(q.fromtos)
         i = 1

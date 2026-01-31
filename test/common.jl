@@ -8,7 +8,6 @@ const M = ["Hareid bussterminal" 36976 6947659; "Hareid ungdomsskule fv. 61" 365
 "Myrvåglomma" 23911 6938921; "Myrvåg" 23412 6939348; "Aurvåg" 22732 6939786; "Aspevika" 22119 6939611; "Kalveneset" 21508 6939662; "Tjørvåg indre" 20671 6939661; "Tjørvåg" 20296 6939961; "Tjørvågane" 20222 6940344; "Tjørvåg nord" 20408 6940732; "Rafteset" 20794 6941312; "Storneset" 20779 6941912; "Stokksund" 20353 6942412; "Notøy" 19429 6943497; "Røyra øst" 19922 6944583; "Røyra vest" 19605 6944608; "Frøystadvåg" 19495 6945400; "Frøystadkrysset" 19646 6945703; "Nerøykrysset" 18739 6946249; "Berge bedehus" 17919 6946489; "Elsebøvegen" 17680 6946358; "Verket" 17441 6946183; "Berge" 17255 6946053; "Hjelmeset" 16949 6945880; "Demingane" 16575 6945717; "Eggesbønes" 16078 6945699; "Myklebust" 16016 6945895; "Herøy kyrkje" 16156 6946651; "Fosnavåg sparebank" 16235 6947271; "Fosnavåg terminal" 16064 6947515]
 
 function plot_inspect_continuity!(pl::Plots.Plot{Plots.GRBackend}, mls; continuous = false, kws...)
-    throw("ok")
     vx = Float64[]
     vy = Float64[]
     vz = Float64[]
@@ -46,7 +45,6 @@ end
 
 
 function plot_inspect_continuity(mls; order = nothing, reversed = nothing)
-        throw("ok")
     pl = plot( size = (1200, 1000); layout = 6)
     plot_inspect_continuity!(pl, mls)
     if ! isnothing(order) 

@@ -8,7 +8,7 @@
 
 Arguments are start and end points given in UTM33 coordinates. Arguments are converted to integers.
 
-Results are memoized and stored to disk. Results are stored after rounding 
+Results are memoized and stored to disk. Results are stored after rounding
 input arguments to whole numbers, i.e. at a resolution of 1 m.
 
 For easy copy / paste from map applications, 's' can be any string containing url-style arguments
@@ -20,7 +20,7 @@ For easy copy / paste from map applications, 's' can be any string containing ur
 # Output notes
 
 `slope` is vertical / horizontal progression. Positive is uphill.
-'radius of curvature' is signed. The vertical component of curves are ignored, but may slightly affect the result. See test example.
+'radius of curvature' is signed. The vertical component of curves is ignored, but may slightly affect the result. See test example.
 `speed limitation` include a reduction from speed humps of 15 km/t at those points.
 'key' is included for backward reference, and can be reused as input argument.
 
@@ -44,7 +44,7 @@ julia> route_leg_data(23594,6942486, 23771,6942715);
 Curvature limited velocity: 32.46935208780521 km/h at 109.79520214324043 m due to radius 67.78927629898796
     Route data (23594 6942486)-(23771 6942715) stored in C:\\Users\\f\\RouteSlopeDistance.jls
 Dict{Symbol, Any} with 7 entries:
-  :radius_of_curvature         => [NaN, NaN, NaN, NaN, NaN, NaN, NaN, NaN, NaN, NaN  …  170.586, 145.066, 131.182, 123.6, 119.802, 118.416, 120.765, 120.486, NaN, NaN] 
+  :radius_of_curvature         => [NaN, NaN, NaN, NaN, NaN, NaN, NaN, NaN, NaN, NaN  …  170.586, 145.066, 131.182, 123.6, 119.802, 118.416, 120.765, 120.486, NaN, NaN]
   :multi_linestring            => [[(23594.2, 6.94249e6, 10.483), (23594.1, 6.94249e6, 10.507), (23593.1, 6.9425e6, 10.657), (23592.9, 6.9425e6, 10.667), (23591.7, 6.9…
   :prefixed_vegsystemreferanse => ["1516 FV5884 S1D1 m6860-7196"]
   :key                         => "(23594 6942486)-(23771 6942715)"
@@ -58,7 +58,7 @@ function route_leg_data(easting1::T, northing1::T, easting2::T, northing2::T; de
     # Use stored data if available.
     key = link_split_key(easting1, northing1, easting2, northing2)
     thisdata = get_memoized_value(key)
-    if ! isempty(thisdata) 
+    if ! isempty(thisdata)
         return thisdata
     end
     # Identify the bits of road we're taking from 1 to 2. This retrieves
@@ -67,14 +67,14 @@ function route_leg_data(easting1::T, northing1::T, easting2::T, northing2::T; de
     q = patched_post_beta_vegnett_rute(easting1, northing1, easting2, northing2)
     refs, revs = extract_prefixed_vegsystemreferanse(q)
     @assert ! startswith(refs[1], "Error") refs[1]
-    # The length of individual segments 
+    # The length of individual segments
     lengths = extract_length(q)
     # Progression at start of first segment, start of second ... end of last.
     # This counts from zero at closest road point to (easting1, northing1)
     progression_at_ends = append!([0.0], cumsum(lengths))
     # Was there any progression at all?
     if progression_at_ends == [0.0, 0.0]
-        # Sometimes we get a zero-length distance. For example, 
+        # Sometimes we get a zero-length distance. For example,
         # a ferry crossing. This happens if ea1 == ea2 && no1 == no2
         # after we ran request modficiations (or even before)
         throw("TODO: examine why. Ferries are now considered (API v4) with points on sea.")
@@ -86,7 +86,7 @@ function route_leg_data(easting1::T, northing1::T, easting2::T, northing2::T; de
         return thisdata
     end
     # 3d points, nested. Some were received in the opposite direction of our request,
-    # then reversed. 
+    # then reversed.
     mls, reversed = extract_multi_linestrings(q)
     @assert reversed == revs "reversed = $reversed \n\t revs = $revs"
     @assert length(progression_at_ends) == length(mls) + 1
@@ -98,38 +98,37 @@ function route_leg_data(easting1::T, northing1::T, easting2::T, northing2::T; de
     progression, radius_of_curvature = progression_and_radii_of_curvature_from_multiline_string(mls, progression_at_ends)
     @assert issorted(progression)
     @assert length(radius_of_curvature) == length(progression)
-    # Finally detail slope also. 
+    # Finally detail slope also.
     slope = smooth_slope_from_multiline_string(mls, progression)
-
     # We have unpacked the useful information from the first request.
-    # Now ask for related information, and unpack it.    
-    # 
+    # Now ask for related information, and unpack it.
+    #
     # The tuples refer to the nominal direction of segments.
     # Robustly testing the exact location of changes in fartsgrense within a selection of segments
     # is hard.
-    # This would be easier on long segments, and easier graphically. 
+    # This would be easier on long segments, and easier graphically.
     # The same goes for the exact location of speed bumps. 'metrering'
     # is quite complicated in some places. However, segments with changes may often be short,
     # so this is of no great importance to travel times.
     fartsgrense_tuples = fartsgrense_from_prefixed_vegsystemreferanse.(refs, reversed)
-    # End stops may be without defined fartsgrense. However, we need 
+    # End stops may be without defined fartsgrense. However, we need
     # a start value, so modify if missing:
     @assert fartsgrense_tuples isa Vector{Tuple{Float64, Int64, Int64}} typeof(fartsgrense_tuples)
     if isnan(fartsgrense_tuples[1][1])
         fartsgrense_tuples[1] = (1.0, default_fartsgrense, default_fartsgrense)
     end
-    # 
-    # Detail fartsgrense on every point of each multi_linestring. We'll 
+    #
+    # Detail fartsgrense on every point of each multi_linestring. We'll
     # unpack further below.
     speed_lims_in_intervals = speed_nested_in_intervals(fartsgrense_tuples, mls)
     # Practical speed limit is reduced by speedbumps.
     # Make further requests for speedbumps and reduce
     # the speeed limit at each bump's coordinates. In-place function.
     modify_fartsgrense_with_speedbumps!(speed_lims_in_intervals, refs, mls)
-    # 
+    #
     # Unpack nested speed limitations.
     speed_limitation = vcat(speed_lims_in_intervals..., speed_lims_in_intervals[end][end])
-    @assert length(progression) == length(speed_limitation) 
+    @assert length(progression) == length(speed_limitation)
 
     # Sum up
     thisdata = Dict(:prefixed_vegsystemreferanse => refs,
@@ -186,7 +185,7 @@ Start over after results are invalidated.
 """
 function delete_memoization_file()
     fna = _get_memoization_filename_but_dont_create_file()
-    if isfile(fna) 
+    if isfile(fna)
         rm(fna)
         println("Removed $fna")
     else
@@ -203,9 +202,9 @@ We're joining curves where two ends are identical.
 We don't check that though, so if you take unordered segments in here, it's on you.
 """
 function unique_unnested_coordinates_of_multiline_string(mls::Vector{ Vector{Tuple{Float64, Float64, Float64}}})
-    vx = Float64[] 
-    vy = Float64[] 
-    vz = Float64[] 
+    vx = Float64[]
+    vy = Float64[]
+    vz = Float64[]
     for i in 1:length(mls)
         p = mls[i]
         px = map(point -> point[1], p)
@@ -234,7 +233,7 @@ julia> plot_elevation_and_slope_vs_progression(d, name1, name2; layout = (2, 1))
 ```
 """
 function plot_elevation_and_slope_vs_progression(d::Dict, name1, name2; layout = (1, 1))
-    p = plot(layout = layout, size = (1200, 800), thickness_scaling = 2, framestyle=:origin, 
+    p = plot(layout = layout, size = (1200, 800), thickness_scaling = 2, framestyle=:origin,
         legend = false, gridlinewidth = 2, gridstyle = :dash)
     plot_elevation_and_slope_vs_progression!(p[1], d, name1, name2)
 end
@@ -262,14 +261,14 @@ in to this destination.
 Often, the entry point to a route is different than
 the exit point, and this matters to finding routes.
 E.g. one enters a spot from one road (exits the route),
-and exits the spot (enters the route) to another road. 
+and exits the spot (enters the route) to another road.
 
 Prepare or look up entries for coordinate replacements.
 This patches for status code 4041 and 4042.
 
 One could make the value (the replacement) manually from
 e.g. Norgeskart.
-""" 
+"""
 coordinate_key(ingoing::Bool, ea, no) = (ingoing ? "In to " : "Out of " ) * "$(Int(round(ea))) $(Int(round(no)))"
 
 """
@@ -285,7 +284,7 @@ coordinate_key(ingoing::Bool, ea, no) = (ingoing ? "In to " : "Out of " ) * "$(I
 Prepare or look up entries for link splits.
 
 One could make the value (the replacement) manually from
-e.g. Norgeskart.   
+e.g. Norgeskart.
 
 # Consider TODO: Use tuple notation, with comma: (a, b)
 """
@@ -294,4 +293,49 @@ function link_split_key(start_pt::T, end_pt::T) where T<:Tuple{Float64, Float64,
     ea1, no1, _ = start_pt
     ea2, no2, _ = end_pt
     link_split_key(ea1, no1, ea2, no2)
+end
+
+"""
+    join_route_data(d1::T, d2::T) where T<:Dict{Symbol, Any}
+    --> Dict{Symbol, Any}
+
+Joins the results from two calls to `route_leg_data`. `route_leg_data` stores
+both results in a cache file, but this does not store the joined result.
+
+Basic continuity checks. Don't expect 'curvature' to be continuous at the joint.
+"""
+function join_route_data(d1::T, d2::T) where T<:Dict{Symbol, Any}
+    # Allocate
+    d = Dict{Symbol, Any}()
+    # :key
+    split(d1[:key], '-')[2] == split(d2[:key], '-')[1] || throw(ArgumentError(":key: 1 end does not match 2 start"))
+    push!(d, :key => split(d1[:key], '-')[1] * '-' *  split(d2[:key], '-')[2])
+    #############################
+    # Fields of 'segments' length
+    #############################
+    #  :multi_linestring
+    d[:multi_linestring] = vcat(d1[:multi_linestring], d2[:multi_linestring])
+    #  :fartsgrense_tuples
+    d[:fartsgrense_tuples] = vcat(d1[:fartsgrense_tuples], d2[:fartsgrense_tuples])
+    #  :prefixed_vegsystemreferanse
+    d[:prefixed_vegsystemreferanse] = vcat(d1[:prefixed_vegsystemreferanse], d2[:prefixed_vegsystemreferanse])
+    #  :progression_at_ends. Updates entries from d2, drops overlap.
+    prog_at_joint = d1[:progression_at_ends][end]
+    d[:progression_at_ends] = vcat(d1[:progression_at_ends][1 : end - 1], 
+        d2[:progression_at_ends] .+ prog_at_joint)
+    ###########################
+    # Fields of 'points' length
+    ###########################
+    #  :radius_of_curvature,  :progression
+    progression, radius_of_curvature = progression_and_radii_of_curvature_from_multiline_string(d[:multi_linestring], d[:progression_at_ends])
+    d[:progression] = progression
+    d[:radius_of_curvature] = radius_of_curvature
+    #  :slope
+    d[:slope] = smooth_slope_from_multiline_string(d[:multi_linestring], progression)
+    #  :speed_limitation. 
+    d[:speed_limitation] = vcat(d1[:speed_limitation][1 : end - 1],  d2[:speed_limitation])
+    @assert length(d[:progression]) == length(d[:radius_of_curvature]) == length(d[:slope]) == length(d[:speed_limitation])
+    # Note: We may now have values for :radius_of_curvature at the joint, where
+    # previously no radius could be calculated. 
+    d
 end

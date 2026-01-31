@@ -10,7 +10,7 @@ Processed data is available through `route_leg_data(A, B)`, where `A` and `B` ar
 - progression
 - database references
 
-There's also a couple of plot definitions (`Plots.jl`) included, for spot checking. See tests for more map-like plots, but full visualizations belong elsewhere:
+There's also a couple of plot definitions (`Plots.jl`) included, for spot checking. See tests for more map-like plots, though full visualizations belong elsewhere:
 
   -  `plot_elevation_and_slope_vs_progression`
   -  `plot_elevation_slope_speed_vs_progression`
@@ -20,6 +20,7 @@ You can fetch other data, e.g. traffic counts, road class or surface, by adaptin
 <img src="resource/plot.svg" alt = "plot" style="display: inline-block; margin: 0 auto; max-width: 640px">
 
 ## Data source
+
 Raw data from [Norsk Vegdatabase](https://nvdb.atlas.vegvesen.no/). Data can be used under [public license](https://data.norge.no/nlod/no/1.0). 
 
 Expert web interface: [vegkart.no/](https://vegkart.atlas.vegvesen.no/#kartlag:geodata/@79705,6949088,7)
@@ -27,11 +28,12 @@ Expert web interface: [vegkart.no/](https://vegkart.atlas.vegvesen.no/#kartlag:g
 Expert route patching (see below): [nvdb-vegdata.github.io/nvdb-visrute/ATM/](https://nvdb-vegdata.github.io/nvdb-visrute/ATM/)
 
 ## Processed data
-Horizontal road curvature is found with the aid of Bsplines, and expressed as signed radius of curvature (negative values is right turn). Use this to estimate acceptable velocity from acceptable centripetal acceleration (`a = v² / r`).
+
+Horizontal road curvature is found with the aid of Bsplines, and expressed as signed radius of curvature (negative values is right turn). Downstream packages can use this to reduce acceptable velocity from acceptable centripetal acceleration (`a = v² / r`).
 
 Slope is also found with the aid of Bsplines and filtering designed to overcome stairstepping from low resolution data, and continuity at joints.
 
-The effect of speed bumps is included as a 15 km/h local reduction in speed limit. The reduction is considered generally relevant to heavy vehicles, as the speed bump profile is often not available.
+The effect of speed bumps is included as a 15 km/h local reduction in speed limit. The reduction is considered generally relevant to heavy vehicles. The actual speed bump profile is often not available in the data.
 
 ## Local patching and memoization
 
@@ -95,9 +97,11 @@ julia> plot_elevation_and_slope_vs_progression(d, "A", "B")
 ## Suggested use
 Routes between `A` and `B` can also be corrected by inserting additional points in the .ini file. When a route can't be found, further hints are printed.
 
-Leg data may be used for calculating travel times and energy consumption with different vehicle models.
+If two routes between `A` and `D` are of interest, caching one of those is not a good idea. Instead, `get_route_data` with results `dAB`, `dAC`, `dBD` and `dCD`. Then, call `join_route_data(dAB, dBD)` and `join_route_data(dAC, dCD)`
+
+Downstream packages use results for calculating travel times and energy consumption with different vehicle models and different acceptable centripetal acceleration.
 
 A good model would include available power curves, vehicle mass, gear shift times and air resistance. An advanced vehicle model would 
 also include power train inertia, gear ratios, torque curves, and air temperature. 
 
-For more conservative travel times, traffic count and light signal data can be fetched. 
+For more conservative or statistically distributed travel times, traffic count and light signal data could be fetched.
