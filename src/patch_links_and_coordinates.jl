@@ -113,22 +113,14 @@ end
 
 function correct_coordinates!(q::Quilt)
     for i in 1:length(q.fromtos)
-        ea_out, no_out, ea_in, no_in = q.fromtos[i]
-        # Out of corrected_coordinates
-        ea, no = corrected_coordinates(false, ea_out, no_out)
-        if ea !== ea_out
-            q.fromtos[i][1] = ea
-        end
-        if no !== no_out
-            q.fromtos[i][2] = no
-        end
-        # In to coords
-        ea, no = corrected_coordinates(true, ea_in, no_in)
-        if ea !== ea_in
-            q.fromtos[i][3] = ea
-        end
-        if no !== no_in
-            q.fromtos[i][4] = no
+        fromto_orig = q.fromtos[i]
+        # Outgoing corrections often differ from ingoing. Think exit or entry to a stop place.
+        # outside of public roads.
+        ea_out, no_out = corrected_coordinates(false, fromto_orig[1:2]...)
+        ea_in, no_in = corrected_coordinates(true, fromto_orig[3:4]...)
+        fromto_corrected = (ea_out, no_out, ea_in, no_in)
+        if fromto_orig !== fromto_corrected
+            q.fromtos[i] = fromto_corrected
         end
     end
 end

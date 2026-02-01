@@ -95,6 +95,7 @@ julia> plot_elevation_and_slope_vs_progression(d, "A", "B")
 ```
 
 ## Suggested use
+
 Routes between `A` and `B` can also be corrected by inserting additional points in the .ini file. When a route can't be found, further hints are printed.
 
 If two routes between `A` and `D` are of interest, caching one of those is not a good idea. Instead, `get_route_data` with results `dAB`, `dAC`, `dBD` and `dCD`. Then, call `join_route_data(dAB, dBD)` and `join_route_data(dAC, dCD)`

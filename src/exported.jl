@@ -129,7 +129,6 @@ function route_leg_data(easting1::T, northing1::T, easting2::T, northing2::T; de
     # Unpack nested speed limitations.
     speed_limitation = vcat(speed_lims_in_intervals..., speed_lims_in_intervals[end][end])
     @assert length(progression) == length(speed_limitation)
-
     # Sum up
     thisdata = Dict(:prefixed_vegsystemreferanse => refs,
         :progression => progression,
@@ -177,6 +176,7 @@ function route_leg_data(s::String; default_fartsgrense = 50)
     end
     route_leg_data(;start, slutt, default_fartsgrense)
 end
+
 
 """
     delete_memoization_file()
