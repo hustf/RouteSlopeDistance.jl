@@ -44,8 +44,8 @@ function amend_fromtos!(q, i)
     key = link_split_key(ea1, no1, ea2, no2)
     value = get_config_value("link split", key, Tuple{Int64, Int64}, nothing_if_not_found = true)
     if ! isnothing(value)
-        to_inserted_point = [ea1, no1, value...]
-        from_inserted_point = [value..., ea2, no2]
+        to_inserted_point = (ea1, no1, value...)
+        from_inserted_point = (value..., ea2, no2)
         q.fromtos[i] = to_inserted_point
         insert!(q.fromtos, i + 1, from_inserted_point)
         print("\nLink split patch ")

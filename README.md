@@ -6,7 +6,7 @@ This package fetches and processes data for calculating minimum travel times and
 Processed data is available through `route_leg_data(A, B)`, where `A` and `B` are UTM33 coordinates. It is presented as a dictionary with rich details including 
 - centreline 3d coordinates
 - curvature and slope based on centreline
-- speed limit
+- speed limit (11 knots for ferries by default)
 - progression
 - database references
 

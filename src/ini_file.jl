@@ -24,6 +24,7 @@ function _prepare_init_file_configuration(io)
     set(conta, "http fields", "User agent", "RouteSlopeDistance.jl 0.0.1 temp_script")
     set(conta, "api server", "baseurl",  "https://nvdbapiles.atlas.vegvesen.no/")
     set(conta, "http fields", "Accept", "application/vnd.vegvesen.nvdb-v3-rev2+json") # temp
+    set(conta, "bilferje", "velocity", 20)
     #
 
     #############

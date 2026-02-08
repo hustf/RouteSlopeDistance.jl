@@ -264,6 +264,13 @@ function is_segment_relevant(ref, vegsegment::JSON3.Object)
     ref_from, ref_to = extract_from_to_meter(ref)
     ref_strekning_delstrekning = extract_strekning_delstrekning(ref)
     ref_kfv = extract_kategori_fase_nummer(ref)
+
+    #@show ref ref_from ref_to relevant_indices indices
+    # @show hasproperty(vegsegment, :typeVeg)
+    # if hasproperty(vegsegment, :typeVeg)
+    #    @show vegsegment.typeVeg
+    #end
+
     if ! hasproperty(vegsegment, :vegsystemreferanse)
         throw(ArgumentError("Can't check if vegsegment without vegsystemreferanse is contained in $ref"))
     end

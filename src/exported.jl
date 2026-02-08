@@ -110,7 +110,10 @@ function route_leg_data(easting1::T, northing1::T, easting2::T, northing2::T; de
     # The same goes for the exact location of speed bumps. 'metrering'
     # is quite complicated in some places. However, segments with changes may often be short,
     # so this is of no great importance to travel times.
+
     fartsgrense_tuples = fartsgrense_from_prefixed_vegsystemreferanse.(refs, reversed)
+    v_km_per_hr = get_config_value("bilferje", "velocity", Int64)
+    modify_fartsgrense_tuples_for_ferry!(fartsgrense_tuples, q, v_km_per_hr)
     # End stops may be without defined fartsgrense. However, we need
     # a start value, so modify if missing:
     @assert fartsgrense_tuples isa Vector{Tuple{Float64, Int64, Int64}} typeof(fartsgrense_tuples)

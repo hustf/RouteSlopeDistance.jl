@@ -59,3 +59,25 @@ function fartsgrense_from_prefixed_vegsystemreferanse(ref, is_reversed)
         inkluder = ["egenskaper","vegsegmenter"])
     extract_split_fartsgrense(o, ref, is_reversed)
 end
+
+function modify_fartsgrense_tuples_for_ferry!(fartsgrense_tuples, q::Quilt, v_km_per_hr)
+    @show fartsgrense_tuples
+    @show length(q.patches)
+#    @assert length(fartsgrense_tuples) == length(q.fromtos)
+#    throw("yess")
+    i = 0
+    for o in q.patches
+        @assert hasproperty(o, :type)
+        @assert o.type =="Rute"
+        @assert hasproperty(o, :vegnettsrutesegmenter)
+        for seg in o[:vegnettsrutesegmenter]
+            i += 1
+            @assert hasproperty(seg, :typeVeg)
+            if lowercase(seg[:typeVeg]) == "bilferje"
+                fartsgrense_tuples[i] = (1.0, v_km_per_hr, v_km_per_hr)
+            end
+        end
+    end
+    @assert length(fartsgrense_tuples) == i
+    fartsgrense_tuples
+end

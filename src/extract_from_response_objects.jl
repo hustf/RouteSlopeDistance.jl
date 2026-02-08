@@ -263,11 +263,9 @@ function extract_split_fartsgrense(o, ref, is_reversed)
             is_segment_relevant(ref, s)
         end
         if length(vegsegmenter) !== 1 
-            @warn "Expected just one vegsegmenter in object $ref, got $(length(vegsegmenter))"
-            @warn "     Maybe is_segment_relevant(ref, s) is too liberal?"
+            @warn "Expected just one vegsegmenter in ref $ref, got $(length(vegsegmenter))"
             for s in vegsegmenter
-                @warn "    Is this actually relevant?" s
-                is_segment_relevant(ref, s)
+                @warn "    Is this actually relevant to $ref? " s[:vegsystemreferanse][:kortform]
             end
         end
         @assert hasproperty(vegsegmenter[1], :vegsystemreferanse) ref
