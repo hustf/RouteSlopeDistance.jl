@@ -61,10 +61,6 @@ function fartsgrense_from_prefixed_vegsystemreferanse(ref, is_reversed)
 end
 
 function modify_fartsgrense_tuples_for_ferry!(fartsgrense_tuples, q::Quilt, v_km_per_hr)
-    @show fartsgrense_tuples
-    @show length(q.patches)
-#    @assert length(fartsgrense_tuples) == length(q.fromtos)
-#    throw("yess")
     i = 0
     for o in q.patches
         @assert hasproperty(o, :type)
