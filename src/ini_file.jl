@@ -25,7 +25,12 @@ function _prepare_init_file_configuration(io)
     set(conta, "api server", "baseurl",  "https://nvdbapiles.atlas.vegvesen.no/")
     set(conta, "http fields", "Accept", "application/vnd.vegvesen.nvdb-v3-rev2+json") # temp
     set(conta, "bilferje", "velocity", 20)
+    # This string will be parsed as a Regex. Use '|' for multiple.
+    rseg = "FV5874|PV99695|1515 KV3290|1515 KV3225 S2D1"
+    set(conta, "avoid segments", "regex-string", rseg * " # Regex match throws. Fixed by defining link splits.")
     #
+    println(io, conta)
+    conta = Inifile()
 
     #############
     # Link splits
@@ -127,6 +132,65 @@ function _prepare_init_file_configuration(io)
         "Byggeli <-> Ulset")
     _add_link_split(conta, "(23294 6937470)-(23911 6938921)", "4124 6938709",
         "Djupvika <-> Myrvåglomma")
+    # These were found by `read_memoized_dict`, looking for FV5874 K S1D1
+   _add_link_split(conta, "(16316 6945649)-(19429 6943497)", "18776 6946081", "No Frøystadvågvegen")
+   _add_link_split(conta, "(16316 6945649)-(19495 6945400)", "18776 6946081", "No Frøystadvågvegen")
+   _add_link_split(conta, "(16316 6945649)-(19605 6944608)", "18776 6946081", "No Frøystadvågvegen")
+   _add_link_split(conta, "(16316 6945649)-(19646 6945703)", "18776 6946081", "No Frøystadvågvegen")
+   _add_link_split(conta, "(16316 6945649)-(19922 6944583)", "18776 6946081", "No Frøystadvågvegen")
+   _add_link_split(conta, "(16316 6945649)-(20222 6940344)", "18776 6946081", "No Frøystadvågvegen")
+   _add_link_split(conta, "(16316 6945649)-(20296 6939961)", "18776 6946081", "No Frøystadvågvegen")
+   _add_link_split(conta, "(16316 6945649)-(20353 6942412)", "18776 6946081", "No Frøystadvågvegen")
+   _add_link_split(conta, "(16316 6945649)-(20408 6940732)", "18776 6946081", "No Frøystadvågvegen")
+   _add_link_split(conta, "(16316 6945649)-(20671 6939661)", "18776 6946081", "No Frøystadvågvegen")
+   _add_link_split(conta, "(16316 6945649)-(20779 6941912)", "18776 6946081", "No Frøystadvågvegen")
+   _add_link_split(conta, "(16316 6945649)-(20794 6941312)", "18776 6946081", "No Frøystadvågvegen")
+   _add_link_split(conta, "(16316 6945649)-(21508 6939662)", "18776 6946081", "No Frøystadvågvegen")
+   _add_link_split(conta, "(16316 6945649)-(22119 6939611)", "18776 6946081", "No Frøystadvågvegen")
+   _add_link_split(conta, "(16316 6945649)-(22732 6939786)", "18776 6946081", "No Frøystadvågvegen")
+   _add_link_split(conta, "(16316 6945649)-(23412 6939348)", "18776 6946081", "No Frøystadvågvegen")
+   _add_link_split(conta, "(16316 6945649)-(23911 6938921)", "18776 6946081", "No Frøystadvågvegen")
+   _add_link_split(conta, "(16316 6945649)-(24823 6939041)", "18776 6946081", "No Frøystadvågvegen")
+   _add_link_split(conta, "(16316 6945649)-(26449 6940130)", "18776 6946081", "No Frøystadvågvegen")
+   _add_link_split(conta, "(16316 6945649)-(26807 6941534)", "18776 6946081", "No Frøystadvågvegen")
+   _add_link_split(conta, "(16316 6945649)-(27262 6945774)", "18776 6946081", "No Frøystadvågvegen")
+   _add_link_split(conta, "(16316 6945649)-(27457 6945077)", "18776 6946081", "No Frøystadvågvegen")
+   _add_link_split(conta, "(16316 6945649)-(27557 6944744)", "18776 6946081", "No Frøystadvågvegen")
+   _add_link_split(conta, "(16316 6945649)-(27714 6945607)", "18776 6946081", "No Frøystadvågvegen")
+   _add_link_split(conta, "(16316 6945649)-(27721 6943086)", "18776 6946081", "No Frøystadvågvegen")
+   _add_link_split(conta, "(16316 6945649)-(27811 6944172)", "18776 6946081", "No Frøystadvågvegen")
+   _add_link_split(conta, "(16316 6945649)-(28275 6945289)", "18776 6946081", "No Frøystadvågvegen")
+   _add_link_split(conta, "(16316 6945649)-(28961 6945248)", "18776 6946081", "No Frøystadvågvegen")
+   _add_link_split(conta, "(16316 6945649)-(29426 6945335)", "18776 6946081", "No Frøystadvågvegen")
+   _add_link_split(conta, "(16316 6945649)-(31167 6946060)", "18776 6946081", "No Frøystadvågvegen")
+   _add_link_split(conta, "(16316 6945649)-(31515 6946166)", "18776 6946081", "No Frøystadvågvegen")
+   _add_link_split(conta, "(16316 6945649)-(31909 6946301)", "18776 6946081", "No Frøystadvågvegen")
+   _add_link_split(conta, "(16316 6945649)-(32344 6946360)", "18776 6946081", "No Frøystadvågvegen")
+   _add_link_split(conta, "(16316 6945649)-(32852 6946449)", "18776 6946081", "No Frøystadvågvegen")
+   _add_link_split(conta, "(16316 6945649)-(33142 6946489)", "18776 6946081", "No Frøystadvågvegen")
+   _add_link_split(conta, "(16316 6945649)-(33729 6946682)", "18776 6946081", "No Frøystadvågvegen")
+   _add_link_split(conta, "(16316 6945649)-(34054 6946887)", "18776 6946081", "No Frøystadvågvegen")
+   _add_link_split(conta, "(16316 6945649)-(34227 6940443)", "18776 6946081", "No Frøystadvågvegen")
+   _add_link_split(conta, "(16316 6945649)-(34418 6947105)", "18776 6946081", "No Frøystadvågvegen")
+   _add_link_split(conta, "(16316 6945649)-(34866 6947308)", "18776 6946081", "No Frøystadvågvegen")
+   _add_link_split(conta, "(16316 6945649)-(35465 6947468)", "18776 6946081", "No Frøystadvågvegen")
+   _add_link_split(conta, "(16316 6945649)-(35983 6947673)", "18776 6946081", "No Frøystadvågvegen")
+   _add_link_split(conta, "(16316 6945649)-(36533 6947582)", "18776 6946081", "No Frøystadvågvegen")
+   _add_link_split(conta, "(16316 6945649)-(36976 6947659)", "18776 6946081", "No Frøystadvågvegen")
+   _add_link_split(conta, "(28858 6945024)-(12017 6950806)", "18776 6946081", "No Frøystadvågvegen")
+   _add_link_split(conta, "(28858 6945024)-(12077 6947190)", "18776 6946081", "No Frøystadvågvegen")
+   _add_link_split(conta, "(28858 6945024)-(16016 6945895)", "18776 6946081", "No Frøystadvågvegen")
+   _add_link_split(conta, "(28858 6945024)-(16064 6947515)", "18776 6946081", "No Frøystadvågvegen")
+   _add_link_split(conta, "(28858 6945024)-(16078 6945699)", "18776 6946081", "No Frøystadvågvegen")
+   _add_link_split(conta, "(28858 6945024)-(16156 6946651)", "18776 6946081", "No Frøystadvågvegen")
+   _add_link_split(conta, "(28858 6945024)-(16235 6947271)", "18776 6946081", "No Frøystadvågvegen")
+   _add_link_split(conta, "(28858 6945024)-(16316 6945649)", "18776 6946081", "No Frøystadvågvegen")
+   _add_link_split(conta, "(28858 6945024)-(16575 6945717)", "18776 6946081", "No Frøystadvågvegen")
+   _add_link_split(conta, "(28858 6945024)-(16949 6945880)", "18776 6946081", "No Frøystadvågvegen")
+   _add_link_split(conta, "(28858 6945024)-(17255 6946053)", "18776 6946081", "No Frøystadvågvegen")
+   _add_link_split(conta, "(28858 6945024)-(17441 6946183)", "18776 6946081", "No Frøystadvågvegen")
+
+
     #
     #########################
     # Coordinate replacements
@@ -316,7 +380,11 @@ function get_config_value(sect, key, ::Type{Tuple{Int64, Int64}}; nothing_if_not
     isnothing(st) && return nothing
     (tryparse(Int64, split(st, ' ')[1]),     tryparse(Int64, split(st, ' ')[2]))
 end
-
+function get_config_value(sect, key, ::Type{Regex}; nothing_if_not_found = false)
+    st = get_config_value(sect, key; nothing_if_not_found)
+    isnothing(st) && return nothing
+    Regex(strip(split(st, '#')[1]))
+end
 
 
 "delete_init_file()"
@@ -329,8 +397,6 @@ function delete_init_file()
         println("$fna Didn't and doesn't exist.")
     end
 end
-
-
 
 
 "Get an existing, readable ini file name, create it if necessary"

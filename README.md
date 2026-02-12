@@ -56,6 +56,7 @@ julia> # If you suspect road changes or have seriously messed up:
 
 ```
 
+If some undesireable shortcut is selected, add it's matching Regex string to [avoid segments]!
 
 ## Additional terminology
 
