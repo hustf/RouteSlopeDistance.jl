@@ -84,15 +84,16 @@ function build_patches!(q::Quilt; omkrets_forced = nothing)
             @assert o.type == "Rute"
             # Before failing, we'll change 'omkrets' in steps.
             if isempty(o.vegnettsrutesegmenter)
-                min_omkrets = 150 # Double default value
+                l = norm((ea2,no2) .- (ea1, no1))
+                min_omkrets = Int(round(0.5 * l))
                 # NOTE that 'max_omkrets' may actually be smaller than 'min_omkrets'!
                 # This would occur for short [link split] entries, as when defining
                 # a certain approach to an end point. It's not intuitive why 
                 # a larger omkrets may lead to a failed request, though. One 
                 # possibility is a server error which isn't caught properly by this
                 # program.
-                max_omkrets = norm((ea2,no2) .- (ea1, no1))
-                for x in range(min_omkrets, max_omkrets, length = 9)
+                max_omkrets = 4 * l
+                for x in range(min_omkrets, max_omkrets, length = 5)
                     omkrets = Int64(round(x))
                     printstyled("Retrying route request $(link_split_key(ea1, no1, ea2, no2)) with 'omkrets' = $omkrets \n", color =:176)
                     o = post_beta_vegnett_rute(ea1, no1, ea2, no2; omkrets)
@@ -117,9 +118,21 @@ function build_patches!(q::Quilt; omkrets_forced = nothing)
                 "$k $sref"
             end
             if ! all(isnothing.(match.(rseg, vref)))
-                @warn "At least one match with [avoid segments] $(rseg) in the returned (unordered) segments:"
-                @warn vref
-                throw("The last request included a segment to be avoided. Fix with 'link split'!")
+                @warn "At least one match with [avoid segments] $(rseg) in the (unordered) segments:"
+                print("[")
+                for i in eachindex(vref)
+                    ref = vref[i]
+                    if isnothing(match(rseg, ref))
+                        print(repr(ref))
+                    else
+                        printstyled(repr(ref), color=:176)
+                    end
+                    if i < lastindex(vref)
+                        print(", ")
+                    end
+                end
+                println("]")
+                throw("The last request $(link_split_key(ea1, no1, ea2, no2)) returned a route segment to be avoided. Fix with 'link split'!")
             end
         end
         push!(q.patches, o)

@@ -26,7 +26,7 @@ function _prepare_init_file_configuration(io)
     set(conta, "http fields", "Accept", "application/vnd.vegvesen.nvdb-v3-rev2+json") # temp
     set(conta, "bilferje", "velocity", 20)
     # This string will be parsed as a Regex. Use '|' for multiple.
-    rseg = "FV5874|PV99695|1515 KV3290|1515 KV3225 S2D1"
+    rseg = "FV5874|PV99695|1515 KV3290|1515 KV3225 S2D1|FV5864"
     set(conta, "avoid segments", "regex-string", rseg * " # Regex match throws. Fixed by defining link splits.")
     #
     println(io, conta)
@@ -133,6 +133,10 @@ function _prepare_init_file_configuration(io)
     _add_link_split(conta, "(23294 6937470)-(23911 6938921)", "4124 6938709",
         "Djupvika <-> Myrvåglomma")
     # These were found by `read_memoized_dict`, looking for FV5874 K S1D1
+   _add_link_split(conta, "(16316 6945649)-(36655 6943150)", "37116 6947313", "Avoid Røyset")
+   _add_link_split(conta, "(28858 6945024)-(36655 6943150)", "37116 6947313", "Avoid Røyset")
+   _add_link_split(conta, "(16316 6945649)-(37116 6947313)", "18776 6946081", "No Frøystadvågvegen")
+   _add_link_split(conta, "(16316 6945649)-(39072 6946121)", "18776 6946081", "No Frøystadvågvegen")
    _add_link_split(conta, "(16316 6945649)-(19429 6943497)", "18776 6946081", "No Frøystadvågvegen")
    _add_link_split(conta, "(16316 6945649)-(19495 6945400)", "18776 6946081", "No Frøystadvågvegen")
    _add_link_split(conta, "(16316 6945649)-(19605 6944608)", "18776 6946081", "No Frøystadvågvegen")
@@ -246,11 +250,6 @@ function _prepare_init_file_configuration(io)
     # This is a trick - there is no public road between Raudemyrvegen and Brenslene. 
     # We can move the outgoing, because the bus line only travels in one direction.
     _add_coord_replacement(conta, (37168, 6923045) => (37168, 6923045),  "Raudemyrvegen", alternative_out = (37122, 6923051))
-    # This is a trick - there is no road across fjords. But it's not sufficent. Out of ferjekai to somewhere on land is also affected.
-    #_add_coord_replacement(conta, (13869, 6928277) => (13869, 6928277),  "Koparneset ferjekai", alternative_out = (13742, 6930773))
-    #_add_coord_replacement(conta, (13742, 6930773) => (13742, 6930773),  "Årvika ferjekai", alternative_out = (13869, 6928277))
-    #=throw("Ouch")
-
  #    Ulsteinvik skysstasjon
  #   set(conta, "coordinates replacement", "In to 27262 6945774", "27265 6945717")
  #   set(conta, "coordinates replacement", "Out of 27262 6945774", "27224 6945781")
@@ -294,8 +293,6 @@ function _prepare_init_file_configuration(io)
     set(conta, "coordinates replacement", "Out of 54938 6956088",  "54923 6956123")
     set(conta, "coordinates replacement", "In to 54938 6956088",  "54967 6956088")
 
-    #set()
-
     #=
     # Leine ytre
     set(conta, "coordinates replacement", "Out of 18365 6948288",  "18357 6948270")
@@ -321,7 +318,6 @@ function _prepare_init_file_configuration(io)
     # Goksøyr snuplass
     set(conta, "coordinates replacement", "In to 16357 6954906", "16344 6954890")
     set(conta, "coordinates replacement", "Out of 16357 6954906", "16344 6954890")
-    =#
     =#
     # To file..
     println(io, conta)
